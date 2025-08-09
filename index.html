@@ -1,252 +1,394 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html>
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
-<title>Стратегия — захват стран</title>
-<style>
-  body {
-    margin:0; padding:0; font-family: Arial, sans-serif;
-    background: #e1f0ff;
-    user-select:none;
-    display:flex; flex-direction: column; align-items:center;
-  }
-  #screenChoose, #screenGame {
-    width: 100%; max-width: 600px; padding: 10px; box-sizing: border-box;
-  }
-  #screenChoose {
-    margin-top: 40px;
-    text-align: center;
-  }
-  #screenChoose h2 {
-    margin-bottom: 20px;
-  }
-  .flag-select {
-    font-size: 40px; cursor:pointer; margin: 8px;
-    display: inline-block; user-select:none;
-    transition: transform 0.2s;
-  }
-  .flag-select:hover {
-    transform: scale(1.3);
-  }
-  #btnStart {
-    margin-top: 30px;
-    padding: 10px 20px;
-    font-size: 18px;
-    cursor: pointer;
-    background: #3a86ff;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    user-select:none;
-  }
-
-  #headerGame {
-    display:flex; justify-content: space-between; align-items:center;
-    background:#3a86ff; color:#fff; padding:10px 20px; border-radius: 8px 8px 0 0;
-  }
-  #headerGame div {
-    font-size: 18px;
-    font-weight: 700;
-  }
-
-  #map {
-    display: grid;
-    grid-template-columns: repeat(12, 1fr);
-    gap: 2px;
-    margin-top: 10px;
-    user-select:none;
-  }
-  .map-cell {
-    width: 38px; height: 38px;
-    font-size: 28px;
-    line-height: 38px;
-    text-align: center;
-    cursor: pointer;
-    border-radius: 6px;
-    background: #a0d8ff;
-    transition: background-color 0.3s;
-    user-select:none;
-  }
-  .map-cell.neutral {
-    background: #c8c8c8;
-    cursor: default;
-  }
-  .map-cell.owned {
-    background: #7bd47b;
-  }
-  .map-cell.enemy {
-    background: #e27a7a;
-  }
-  .map-cell:hover {
-    filter: brightness(1.15);
-  }
-
-  #infoPanel {
-    margin-top: 15px;
-    background: white;
-    padding: 12px;
-    border-radius: 8px;
-    box-shadow: 0 0 8px rgba(0,0,0,0.15);
-  }
-
-  #stats, #upgradePanel, #attackPanel, #logPanel {
-    margin-top: 15px;
-  }
-
-  #stats div, #upgradePanel div, #attackPanel div {
-    margin-bottom: 8px;
-  }
-
-  button {
-    cursor: pointer;
-    padding: 6px 12px;
-    font-size: 16px;
-    border-radius: 6px;
-    border: none;
-    background: #3a86ff;
-    color: white;
-    transition: background-color 0.3s;
-    user-select:none;
-  }
-  button:disabled {
-    background: #999;
-    cursor: not-allowed;
-  }
-  button:hover:not(:disabled) {
-    background: #265bb5;
-  }
-
-  #logPanel {
-    max-height: 120px;
-    overflow-y: auto;
-    background: #eef6ff;
-    padding: 8px;
-    border-radius: 8px;
-    font-size: 14px;
-    user-select:none;
-  }
-
-  .emoji {
-    margin-right: 6px;
-    font-size: 20px;
-  }
-</style>
+    <title>Стратегия: Карта Мира</title>
+    <meta charset="UTF-8">
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background-color: #f0f4f8; 
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        #game-container {
+            width: 100%;
+            max-width: 1000px;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            padding: 25px;
+            box-sizing: border-box;
+        }
+        h1 { 
+            text-align: center; 
+            color: #2c3e50; 
+            margin-bottom: 20px;
+        }
+        h2, h3 { 
+            color: #34495e; 
+            border-bottom: 2px solid #ecf0f1; 
+            padding-bottom: 5px;
+        }
+        #map-and-ui {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        #game-map {
+            font-size: 14px;
+            line-height: 1.2;
+            white-space: pre;
+            padding: 15px;
+            background-color: #eaf2f8;
+            border-radius: 8px;
+            overflow: auto;
+            border: 1px solid #dcdfe4;
+            flex-grow: 1;
+        }
+        #ui-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        .ui-box {
+            background-color: #f9fbfd;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #dcdfe4;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .ui-box p, .ui-box button {
+            margin: 8px 0;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            background-color: #3498db;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        button:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+        }
+        .country-flag-select {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .country-flag-select button {
+            width: auto;
+            padding: 5px 10px;
+            background-color: #ecf0f1;
+            color: #34495e;
+            font-size: 20px;
+        }
+        .country-flag-select button.selected {
+            background-color: #2ecc71;
+            color: white;
+        }
+        .attack-target {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 5px;
+        }
+        .modal {
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            max-width: 500px;
+        }
+        .hidden { display: none !important; }
+    </style>
 </head>
 <body>
 
-<div id="screenChoose">
-  <h2>Выберите страну для начала</h2>
-  <div id="flagsContainer"></div>
-  <button id="btnStart" disabled>Начать игру</button>
-</div>
+    <div id="game-container">
+        <h1>Стратегическая игра</h1>
+        
+        <div id="select-country-modal" class="modal">
+            <div class="modal-content">
+                <h2>Выберите вашу страну</h2>
+                <div class="country-flag-select" id="country-select-buttons">
+                    </div>
+            </div>
+        </div>
 
-<div id="screenGame" style="display:none;">
-  <div id="headerGame">
-    <div>Баланс: <span id="balance">1000</span> 💰</div>
-    <div>Ваша страна: <span id="playerCountryFlag"></span> <span id="playerCountryName"></span></div>
-  </div>
+        <div id="map-and-ui" class="hidden">
+            <div id="game-map">
+                </div>
 
-  <div id="map" title="Карта мира — кликните по стране"></div>
+            <div id="ui-panel">
+                <div id="country-info" class="ui-box">
+                    <h2>Ваша страна: <span id="player-country"></span></h2>
+                    <p>Деньги: <span id="player-money"></span>💰</p>
+                    <p>Военная мощь: <span id="player-military"></span>💂</p>
+                    <p>Инфраструктура: <span id="player-infrastructure"></span>🏭</p>
+                    <p>Доход/ход: <span id="player-income"></span>💰</p>
+                </div>
 
-  <div id="infoPanel">
-    <h3>Информация о стране <span id="infoFlag"></span> <span id="infoName"></span></h3>
-    <div id="stats"></div>
+                <div id="upgrade-buttons" class="ui-box">
+                    <h3>Прокачать</h3>
+                    <button id="upgrade-infra-btn">Инфраструктура (+1) - 100💰 🏭</button>
+                    <button id="upgrade-military-btn">Войска (+5) - 150💰 💂</button>
+                    <p>Для захваченной страны:</p>
+                    <button id="upgrade-police-btn" disabled>Полиция (+1) - 50💰 👮</button>
+                </div>
 
-    <div id="upgradePanel">
-      <h4>Прокачать инфраструктуру и армию</h4>
-      <div><button data-upgrade="economy">🏭 Экономика (+10% доход) — 200 💰</button></div>
-      <div><button data-upgrade="army">💂 Армия (+10% силы) — 200 💰</button></div>
-      <div><button data-upgrade="navy">🛳️ Флот (+10% силы) — 200 💰</button></div>
-      <div><button data-upgrade="airforce">✈️ Авиация (+10% силы) — 200 💰</button></div>
-      <div><button data-upgrade="railway">🚂 Железная дорога (+10% доход) — 200 💰</button></div>
-      <div><button data-upgrade="police">👮 Полиция (уменьшает восстания) — 200 💰</button></div>
+                <div id="attack-panel" class="ui-box">
+                    <h3>Напасть на страну</h3>
+                    <div id="attack-targets-list">
+                        </div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div id="attackPanel" style="margin-top: 20px;">
-      <h4>Напасть на страну</h4>
-      <button id="btnAttack" disabled>Напасть</button>
-    </div>
+    <script>
+        // game.js - Вся логика игры здесь!
+        const countriesData = {
+            '🇨🇳': { name: 'Китай', military: 25, infrastructure: 5, income: 15 },
+            '🇬🇧': { name: 'Британия', military: 15, infrastructure: 8, income: 10 },
+            '🇺🇸': { name: 'США', military: 30, infrastructure: 10, income: 20 },
+            '🇺🇦': { name: 'Украина', military: 10, infrastructure: 7, income: 8 },
+            '🇷🇺': { name: 'Россия', military: 20, infrastructure: 6, income: 12 },
+            '🇵🇱': { name: 'Польша', military: 8, infrastructure: 4, income: 6 },
+            '🇪🇦': { name: 'Испания', military: 9, infrastructure: 5, income: 7 },
+            '🇮🇹': { name: 'Италия', military: 7, infrastructure: 6, income: 7 },
+            '🇰🇿': { name: 'Казахстан', military: 6, infrastructure: 3, income: 5 },
+            '🇮🇪': { name: 'Ирландия', military: 5, infrastructure: 9, income: 6 },
+        };
 
-    <div id="logPanel">
-      <h4>Лог событий</h4>
-      <div id="logMessages"></div>
-    </div>
-  </div>
-</div>
+        const mapLayout = [
+            '  🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦',
+            ' 🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦',
+            '🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦',
+            '🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦',
+            '🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦',
+            '🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦',
+            '🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦',
+            '🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦',
+            '🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦',
+            '🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦',
+        ];
+        
+        // Добавление флагов на карту. Это просто для примера.
+        mapLayout[3] = mapLayout[3].substr(0, 5) + '🇺🇦' + mapLayout[3].substr(7);
+        mapLayout[6] = mapLayout[6].substr(0, 10) + '🇷🇺' + mapLayout[6].substr(12);
 
-<script>
-(() => {
-  const countries = [
-    {id:'CN', name:'Китай', flag:'🇨🇳'},
-    {id:'FR', name:'Франция', flag:'🇫🇷'},
-    {id:'GB', name:'Великобритания', flag:'🇬🇧'},
-    {id:'PL', name:'Польша', flag:'🇵🇱'},
-    {id:'UM', name:'Острова США', flag:'🇺🇲'},
-    {id:'AE', name:'ОАЭ', flag:'🇦🇪'},
-    {id:'IE', name:'Ирландия', flag:'🇮🇪'},
-    {id:'IT', name:'Италия', flag:'🇮🇹'},
-    {id:'KZ', name:'Казахстан', flag:'🇰🇿'},
-    {id:'RU', name:'Россия', flag:'🇷🇺'},
-  ];
+        let gameState = {
+            player: {
+                flag: '',
+                name: '',
+                money: 500,
+                military: 0,
+                infrastructure: 0,
+                conquered: [],
+            },
+            countries: {}
+        };
+        
+        let selectedTargetFlag = null;
 
-  const initialStats = {
-    CN: { economyLevel: 3, armyLevel: 4, navyLevel: 3, airforceLevel: 3, railwayLevel: 2, policeLevel: 2, baseIncome: 150 },
-    FR: { economyLevel: 4, armyLevel: 3, navyLevel: 3, airforceLevel: 3, railwayLevel: 3, policeLevel: 3, baseIncome: 140 },
-    GB: { economyLevel: 4, armyLevel: 3, navyLevel: 4, airforceLevel: 4, railwayLevel: 3, policeLevel: 3, baseIncome: 145 },
-    PL: { economyLevel: 2, armyLevel: 2, navyLevel: 1, airforceLevel: 2, railwayLevel: 2, policeLevel: 2, baseIncome: 90 },
-    UM: { economyLevel: 3, armyLevel: 3, navyLevel: 4, airforceLevel: 4, railwayLevel: 3, policeLevel: 2, baseIncome: 130 },
-    AE: { economyLevel: 3, armyLevel: 2, navyLevel: 1, airforceLevel: 2, railwayLevel: 1, policeLevel: 3, baseIncome: 110 },
-    IE: { economyLevel: 2, armyLevel: 1, navyLevel: 1, airforceLevel: 1, railwayLevel: 2, policeLevel: 3, baseIncome: 100 },
-    IT: { economyLevel: 3, armyLevel: 3, navyLevel: 2, airforceLevel: 3, railwayLevel: 3, policeLevel: 2, baseIncome: 120 },
-    KZ: { economyLevel: 2, armyLevel: 2, navyLevel: 0, airforceLevel: 1, railwayLevel: 2, policeLevel: 2, baseIncome: 80 },
-    RU: { economyLevel: 4, armyLevel: 5, navyLevel: 4, airforceLevel: 4, railwayLevel: 3, policeLevel: 3, baseIncome: 160 },
-  };
+        // Элементы DOM
+        const gameMapEl = document.getElementById('game-map');
+        const playerCountryEl = document.getElementById('player-country');
+        const playerMoneyEl = document.getElementById('player-money');
+        const playerMilitaryEl = document.getElementById('player-military');
+        const playerInfrastructureEl = document.getElementById('player-infrastructure');
+        const playerIncomeEl = document.getElementById('player-income');
+        const upgradeInfraBtn = document.getElementById('upgrade-infra-btn');
+        const upgradeMilitaryBtn = document.getElementById('upgrade-military-btn');
+        const upgradePoliceBtn = document.getElementById('upgrade-police-btn');
+        const attackTargetsList = document.getElementById('attack-targets-list');
+        const selectCountryModal = document.getElementById('select-country-modal');
+        const gameUI = document.getElementById('map-and-ui');
 
-  const mapGrid = [
-    ['RU', 'RU', null,  'CN',  'CN',  null,  'KZ',  'KZ', null,  'PL',  'PL', null],
-    ['RU', null, null,  'CN',  null,  null,  'KZ',  null, null,  'PL',  'GB', 'GB'],
-    [null, null, null,  null,  null,  null,  null,  null, null,  'PL',  'GB', 'FR'],
-    [null, null, null,  null,  null,  null,  null,  null, 'IE', 'IE',  'FR', 'FR'],
-    [null, 'UM', null,  null,  'AE',  null,  null,  'IE', 'IE', 'IT',  'IT', null],
-    [null, 'UM', null,  null,  'AE',  null,  null,  null, 'IE', 'IT',  null, null],
-    [null, null, null,  null,  null,  null,  null,  null, null,  null,  null, null],
-  ];
+        function updateUI() {
+            playerCountryEl.innerText = `${gameState.player.flag} ${gameState.player.name}`;
+            playerMoneyEl.innerText = gameState.player.money;
+            playerMilitaryEl.innerText = gameState.player.military;
+            playerInfrastructureEl.innerText = gameState.player.infrastructure;
+            
+            const totalIncome = gameState.player.infrastructure * 5 + 
+                                gameState.player.conquered.reduce((sum, c) => sum + (c.police * 3), 0);
+            playerIncomeEl.innerText = totalIncome;
 
-  const state = {};
+            upgradeInfraBtn.disabled = gameState.player.money < 100;
+            upgradeMilitaryBtn.disabled = gameState.player.money < 150;
+            upgradePoliceBtn.disabled = gameState.player.money < 50 || !gameState.player.conquered.length;
+        }
 
-  // Инициализация состояния стран с их уникальной статистикой
-  countries.forEach(c => {
-    const stats = initialStats[c.id];
-    state[c.id] = {
-      owner: null,
-      economyLevel: stats.economyLevel,
-      armyLevel: stats.armyLevel,
-      navyLevel: stats.navyLevel,
-      airforceLevel: stats.airforceLevel,
-      railwayLevel: stats.railwayLevel,
-      policeLevel: stats.policeLevel,
-      baseIncome: stats.baseIncome,
-      isCaptured: false,
-    };
-  });
+        function drawMap() {
+            let mapString = mapLayout.map(row => row.replace(/ /g, ' ')).join('\n');
+            gameMapEl.innerText = mapString;
+        }
 
-  let playerCountryId = null;
-  let balance = 1000;
-  let selectedCountryId = null;
+        function createCountrySelection() {
+            const countrySelectButtons = document.getElementById('country-select-buttons');
+            for (const flag in countriesData) {
+                const button = document.createElement('button');
+                button.innerText = flag;
+                button.onclick = () => selectCountry(flag);
+                countrySelectButtons.appendChild(button);
+            }
+        }
 
-  const screenChoose = document.getElementById('screenChoose');
-  const flagsContainer = document.getElementById('flagsContainer');
-  const btnStart = document.getElementById('btnStart');
+        function selectCountry(flag) {
+            const country = countriesData[flag];
+            gameState.player.flag = flag;
+            gameState.player.name = country.name;
+            gameState.player.military = country.military;
+            gameState.player.infrastructure = country.infrastructure;
+            
+            // Инициализация остальных стран
+            for (const otherFlag in countriesData) {
+                if (otherFlag !== flag) {
+                    gameState.countries[otherFlag] = {
+                        ...countriesData[otherFlag],
+                        flag: otherFlag,
+                        isConquered: false,
+                        police: 0,
+                    };
+                }
+            }
 
-  const screenGame = document.getElementById('screenGame');
-  const playerCountryFlag = document.getElementById('playerCountryFlag');
-  const playerCountryName = document.getElementById('playerCountryName');
-  const balanceElem = document.getElementById('balance');
-  const mapElem = document.getElementById('map');
-  const infoFlag = document.getElementById('infoFlag');
-  const infoName = document.getElementById('infoName');
-  const statsElem = document.getElementById('stats');
-  const upgradePanel = document.getElementById('upgradePanel');
-  const attackPanel = document.getElementById('attackPanel');
-  const btnAttack = document.getElementBy
+            selectCountryModal.classList.add('hidden');
+            gameUI.classList.remove('hidden');
+            startGame();
+        }
+        
+        function populateAttackTargets() {
+            attackTargetsList.innerHTML = '';
+            for (const flag in gameState.countries) {
+                const country = gameState.countries[flag];
+                if (!country.isConquered) {
+                    const div = document.createElement('div');
+                    div.className = 'attack-target';
+                    div.innerHTML = `
+                        <span>${flag} ${country.name} - 💂 ${country.military}</span>
+                        <button onclick="attackCountry('${flag}')">Напасть</button>
+                    `;
+                    attackTargetsList.appendChild(div);
+                }
+            }
+        }
+        
+        function attackCountry(targetFlag) {
+            const targetCountry = gameState.countries[targetFlag];
+            if (gameState.player.military > targetCountry.military) {
+                alert(`Вы захватили ${targetCountry.name}!`);
+                targetCountry.isConquered = true;
+                targetCountry.conqueredBy = gameState.player.flag;
+                targetCountry.police = 1; // Начальная полиция
+                gameState.player.conquered.push(targetCountry);
+                
+                // Удаляем страну из списка целей
+                populateAttackTargets();
+                updateUI();
+            } else {
+                alert(`Нападение на ${targetCountry.name} провалилось. Вы потеряли 50 солдат.`);
+                gameState.player.military = Math.max(0, gameState.player.military - 50);
+                updateUI();
+            }
+        }
+        
+        function checkRebellion() {
+            gameState.player.conquered.forEach(country => {
+                // Шанс восстания 50/50, если полиция не прокачана.
+                const rebellionChance = 0.5 - (country.police * 0.1);
+                if (Math.random() < rebellionChance) {
+                    alert(`В ${country.name} вспыхнуло восстание! Вы потеряли контроль.`);
+                    
+                    // Возвращаем страну в исходное состояние
+                    country.isConquered = false;
+                    country.police = 0;
+                    country.conqueredBy = null;
+                    
+                    // Удаляем её из списка захваченных
+                    gameState.player.conquered = gameState.player.conquered.filter(c => c.flag !== country.flag);
+                    
+                    // Возвращаем в список целей для нападения
+                    populateAttackTargets();
+                }
+            });
+        }
+        
+        function gameLoop() {
+            gameState.player.money += gameState.player.infrastructure * 5; // Доход от своей инфраструктуры
+            gameState.player.conquered.forEach(country => {
+                gameState.player.money += country.police * 3; // Доход от полиции в захваченной стране
+            });
+            
+            checkRebellion();
+            updateUI();
+        }
+
+        // События кнопок
+        upgradeInfraBtn.addEventListener('click', () => {
+            if (gameState.player.money >= 100) {
+                gameState.player.money -= 100;
+                gameState.player.infrastructure += 1;
+                updateUI();
+            }
+        });
+
+        upgradeMilitaryBtn.addEventListener('click', () => {
+            if (gameState.player.money >= 150) {
+                gameState.player.money -= 150;
+                gameState.player.military += 5;
+                updateUI();
+            }
+        });
+
+        upgradePoliceBtn.addEventListener('click', () => {
+            if (gameState.player.money >= 50 && gameState.player.conquered.length) {
+                gameState.player.money -= 50;
+                // Прокачиваем полицию у всех захваченных стран сразу, чтобы упростить
+                gameState.player.conquered.forEach(c => c.police++);
+                updateUI();
+            }
+        });
+
+        function startGame() {
+            drawMap();
+            populateAttackTargets();
+            // Основной цикл игры, обновляется каждую секунду
+            setInterval(gameLoop, 1000); 
+        }
+        
+        // Запускаем выбор страны при загрузке страницы
+        document.addEventListener('DOMContentLoaded', createCountrySelection);
+    </script>
+</body>
+  </html>
+  
