@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+<title>Стратегия — захват стран</title>
+<style>
+  body {
+    margin:0; padding:0; font-family: Arial, sans-serif;
+    background: #e1f0ff;
+    user-select:none;
+    display:flex; flex-direction: column; align-items:center;
+  }
+  #screenChoose, #screenGame {
+    width: 100%; max-width: 600px; padding: 10px; box-sizing: border-box;
+  }
+  #screenChoose {
+    margin-top: 40px;
+    text-align: center;
+  }
+  #screenChoose h2 {
+    margin-bottom: 20px;
+  }
+  .flag-select {
+    font-size: 40px; cursor:pointer; margin: 8px;
+    display: inline-block; user-select:none;
+    transition: transform 0.2s;
+  }
+  .flag-select:hover {
+    transform: scale(1.3);
+  }
+  #btnStart {
+    margin-top: 30px;
+    padding: 10px 20px;
+    font-size: 18px;
+    cursor: pointer;
+    background: #3a86ff;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    user-select:none;
+  }
+
+  #headerGame {
+    display:flex; justify-content: space-between; align-items:center;
+    background:#3a86ff; color:#fff; padding:10px 20px; border-radius: 8px 8px 0 0;
+  }
+  #headerGame div {
+    font-size: 18px;
+    font-weight: 700;
+  }
+
+  #map {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 2px;
+    margin-top: 10px;
+    user-select:none;
+  }
+  .map-cell {
+    width: 38px; height: 38px;
+    font-size: 28px;
+    line-height: 38px;
+    text-align: center;
+    cursor: pointer;
+    border-radius: 6px;
+    background: #a0d8ff;
+    transition: background-color 0.3s;
+    user-select:none;
+  }
+  .map-cell.neutral {
+    background: #c8c8c8;
+    cursor: default;
+  }
+  .map-cell.owned {
+    background: #7bd47b;
+  }
+  .map-cell.enemy {
+    background: #e27a7a;
+  }
+  .map-cell:hover {
+    filter: brightness(1.15);
+  }
+
+  #infoPanel {
+    margin-top: 15px;
+    background: white;
+    padding: 12px;
+    border-radius: 8px;
+    box-shadow: 0 0 8px rgba(0,0,0,0.15);
+  }
+
+  #stats, #upgradePanel, #attackPanel, #logPanel {
+    margin-top: 15px;
+  }
+
+  #stats div, #upgradePanel div, #attackPanel div {
+    margin-bottom: 8px;
+  }
+
+  button {
+    cursor: pointer;
+    padding: 6px 12px;
+    font-size: 16px;
+    border-radius: 6px;
+    border: none;
+    background: #3a86ff;
+    color: white;
+    transition: background-color 0.3s;
+    user-select:none;
+  }
+  button:disabled {
+    background: #999;
+    cursor: not-allowed;
+  }
+  button:hover:not(:disabled) {
+    background: #265bb5;
+  }
+
+  #logPanel {
+    max-height: 120px;
+    overflow-y: auto;
+    background: #eef6ff;
+    padding: 8px;
+    border-radius: 8px;
+    font-size: 14px;
+    user-select:none;
+  }
+
+  .emoji {
+    margin-right: 6px;
+    font-size: 20px;
+  }
+</style>
+</head>
+<body>
+
+<!-- Выбор страны -->
+<div id="screenChoose">
+  <h2>Выберите страну для начала</h2>
+  <div id="flagsContainer">
+    <!-- Флаги будут созданы JS -->
+  </div>
+  <button id="btnStart" disabled>Начать игру</button>
+</div>
+
+<!-- Игровой экран -->
+<div id="screenGame" style="display:none;">
+  <div id="headerGame">
+    <div>Баланс: <span id="balance">1000</span> 💰</div>
+    <div>Ваша страна: <span id="playerCountryFlag"></span> <span id="playerCountryName"></span></div>
+  </div>
+
+  <div id="map" title="Карта мира — кликните по стране"></div>
+
+  <div id="infoPanel">
+    <h3>Информация о стране <span id="infoFlag"></span> <span id="infoName"></span></h3>
+    <div id="stats">
+      <!-- Статистика страны будет здесь -->
+    </div>
+
+    <div id="upgradePanel">
+      <h4>Прокачать инфраструктуру и армию</h4>
+      <div><button data-upgrade="economy">🏭 Экономика (+10% доход) — 200 💰</button></div>
+      <div><button data-upgrade="army">💂 Армия (+10% силы) — 200 💰</button></div>
+      <div><button data-upgrade="navy">🛳️ Флот (+10% силы) — 200 💰</button></div>
+      <div><button data-upgrade="airforce">✈️ Авиация (+10% силы) — 200 💰</button></div>
+      <div><button data-upgrade="railway">🚂 Железная дорога (+10% доход) — 200 💰</button></div>
+      <div><button data-upgrade="police">👮 Полиция (уменьшает восстания) — 200 💰</button></div>
+    </div>
+
+    <div id="attackPanel" style="margin-top: 20px;">
+      <h4>Напасть на страну</h4>
+      <button id="btnAttack" disabled>Напасть</button>
+    </div>
+
+    <div id="logPanel">
+      <h4>Лог событий</h4>
+      <div id="logMessages"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  // --- Данные стран ---
+  // Страны: id, имя, флаг, начальная экономика, армия, полиция и т.п.
+  const countries = [
+    {id:'CN', name:'Китай', flag:'🇨🇳'},
+    {id:'FR', name:'Франция', flag:'🇫🇷'},
+    {id:'GB', name:'Великобритания', flag:'🇬🇧'},
+    {id:'PL', name:'Польша', flag:'🇵🇱'},
+    {id:'UM', name:'Острова США', flag:'🇺🇲'},
+    {id:'UA', name:'Украина', flag:'🇺🇦'},
+    {id:'AE', name:'ОАЭ', flag:'🇦🇪'},
+    {id:'IE', name:'Ирландия', flag:'🇮🇪'},
+    {id:'IT', name:'Италия', flag:'🇮🇹'},
+    {id:'KZ', name:'Казахстан', flag:'🇰🇿'},
+    {id:'RU', name:'Россия', flag:'🇷🇺'},
+  ];
+
+  // Карта мира - 12x6 ячеек, для простоты укажем, что каждая клетка либо пустая (null),
+  // либо содержит id страны
+  const mapGrid = [
+    [null, 'RU',  null, 'CN',  null, 'KZ',  null,  null,  'PL', null,  'GB', null],
+    ['RU',  'RU', 'RU',  'CN',  'CN', 'KZ',  null,  null,  'PL', 'PL', 'GB', null],
+    [null, 'RU',  null, 'CN',  null, null,  null,  null,  null, 'PL', 'GB', 'FR'],
+    [null, null,  null, null,  null, null,  null,  null,  null, null, 'IE', 'FR'],
+    [null, 'UM',  null, null,  'AE', null,  null,  'IE', 'IE', 'IT', 'IT', null],
+    [null, 'UM',  null, null,  'AE', null,  null,  null, 'IE', 'IT',  null, null],
+  ];
+
+  // По умолчанию все страны нейтральные (owner = null)
+  // у каждой страны будет состояние
+  const state = {};
+  countries.forEach(c => {
+    state[c.id] = {
+      owner: null,            // id игрока (будет 'player') или null или 'AI'
+      economyLevel: 1,        // уровень экономики (доходы)
+      armyLevel: 1,           // армия
+      navyLevel: 1,           // флот
+      airforceLevel: 1,       // авиация
+      railwayLevel: 1,        // ж/д
+      policeLevel: 1,         // полиция
+      baseIncome: 100,        // базовый доход (можно потом варьировать)
+      currentIncome: 100,     // доход с учётом прокачки
+      isCaptured: false,      // захвачена ли игроком
+    };
+  });
+
+  // Игрок
+  let playerCountryId = null;
+  let balance = 1000;
+
+  // Выбранная страна для просмотра/управления (id)
+  let selectedCountryId = null;
+
+  // Элементы
+  const screenChoose = document.getElementById('screenChoose');
+  const flagsContainer = document.getElementById('flagsContainer');
+  const btnStart = document.getElementById('btnStart');
+
+  const screenGame = document.getElementById('screenGame');
+  const playerCountryFlag = document.getElementById('playerCountryFlag');
+  const playerCountryName = document.getElementById('playerCountryName');
+  const balanceElem = document.getElementById('balance');
+  const mapElem = document.getElementById('map');
+  const infoFlag = document.getElementById('infoFlag');
+  const infoName = document.getElementById('infoName');
+  const statsElem = document.getElementById('stats');
+  const upgradePanel = document.getElementById('upgradePanel');
+  const attackPanel = document.getElementById('attackPanel');
+  const btnAttack = document.getElementById('btnAttack');
+  const logMessages = document.getElementById('logMessages');
+
+  // Заполняем выбор страны флагами
+  countries.forEach(c => {
+    const span = document.createElement('span');
+    span.className = 'flag-select';
+    span.textContent = c.flag;
+    span.title = c.name;
+    span.dataset.id = c.id;
+    flagsContainer.appendChild(span);
+  });
+
+  // Выбор игроком страны
+  flagsContainer.addEventListener('click', e => {
+    if(e.target.classList.contains('flag-select')) {
+      // Снять выделение у всех
+      flagsContainer.querySelectorAll('.flag-select').forEach(el => el.style.border = '');
+      // Отметить выбранную
+      e.target.style.border = '3px solid #3a86ff';
+      playerCountryId = e.target.dataset.id;
+      btnStart.disabled = false;
+    }
+  });
+
+  btnStart.addEventListener('click', () => {
+    if(!playerCountryId) return;
+    // Присваиваем игроку выбранную страну
+    state[playerCountryId].owner = 'player';
+    state[playerCountryId].isCaptured = true;
+    selectedCountryId = playerCountryId;
+
+    // Скрыть экран выбора и показать игру
+    screenChoose.style.display = 'none';
+    screenGame.style.display = 'block';
+
+    updateUI();
+    logAdd(`Вы начали игру за страну ${getCountryById(playerCountryId).name}`);
+  });
+
+  // --- Функции ---
+
+  function getCountryById(id) {
+    return countries.find(c => c.id === id);
+  }
+
+  // Обновление всей UI
+  function updateUI() {
+    balanceElem.textContent = balance;
+
+    playerCountryFlag.textContent = getCountryById(playerCountryId)?.flag || '';
+    playerCountryName.textContent = getCountryById(playerCountryId)?.name || '';
+
+    renderMap();
+    renderSelectedCountry();
+    updateAttackButton();
+  }
+
+  // Рендер карты мира
+  function renderMap() {
+    mapElem.innerHTML = '';
+    for(let r=0; r<mapGrid.length; r++) {
+      for(let c=0; c<mapGrid[r].length; c++) {
+        const cellCountryId = mapGrid[r][c];
+        const cell = document.createElement('div');
+        cell.className = 'map-cell';
+        if(cellCountryId === null) {
+          cell.classList.add('neutral');
+          cell.textContent = '🟦';
+          cell.title = 'Нейтральная территория';
+          cell.dataset.id = '';
+          cell.style.cursor = 'default';
+        } else {
+          const country = getCountryById(cellCountryId);
+          const st = state[cellCountryId];
+          cell.textContent = country.flag;
+          cell.title = country.name + (st.owner === 'player' ? ' (Ваша страна)' : st.owner === 'AI' ? ' (Враг)' : ' (Нейтральная)');
+          cell.dataset.id = cellCountryId;
+
+          if(st.owner === 'player') cell.classList.add('owned');
+          else if(st.owner === 'AI') cell.classList.add('enemy');
+        }
+        cell.addEventListener('click', () => {
+          if(cell.dataset.id) {
+            selectedCountryId = cell.dataset.id;
+            renderSelectedCountry();
+            updateAttackButton();
+          }
+        });
+        mapElem.appendChild(cell);
+      }
+    }
+  }
+
+  // Показать данные выбранной страны
+  function renderSelectedCountry() {
+    if(!selectedCountryId) {
+      infoFlag.textContent = '';
+      infoName.textContent = '';
+      statsElem.innerHTML = 'Выберите страну на карте';
+      upgradePanel.style.display = 'none';
+      attackPanel.style.display = 'none';
+      return;
+    }
+    const c = getCountryById(selectedCountryId);
+    const st = state[selectedCountryId];
+    infoFlag.textContent = c.flag;
+    infoName.textContent = c.name;
+
+    let ownerStr = st.owner === 'player' ? 'Вы' : st.owner === 'AI' ? 'Враг' : 'Нейтральная';
+    let capturedStr = st.isCaptured ? 'Захвачена' : 'Свободна';
+
+    statsElem.innerHTML = `
+      <div>Владелец: <b>${ownerStr}</b></div>
+      <div>Состояние: <b>${capturedStr}</b></div>
+      <div>Экономика: ${st.economyLevel} (доход: ${calculateIncome(selectedCountryId)})</div>
+      <div>Армия: ${st.armyLevel}</div>
+      <div>Флот: ${st.navyLevel}</div>
+      <div>Авиация: ${st.airforceLevel}</div>
+      <div>Железная дорога: ${st.railwayLevel}</div>
+      <div>Полиция: ${st.policeLevel}</div>
+    `;
+
+    // Апгрейды доступны только для своей страны и захваченных
+    if(st.owner === 'player') {
+      upgradePanel.style.display = 'block';
+      attackPanel.style.display = 'block';
+      // Активируем кнопки апгрейдов с проверкой баланса
+      Array.from(upgradePanel.querySelectorAll('button')).forEach(btn => {
+        btn.disabled = balance < 200;
+      });
+    } else {
+      upgradePanel.style.display = 'none';
+      attackPanel.style.display = 'none';
+    }
+  }
+
+  // Расчёт дохода с страны с учётом уровней экономики и ж/д
+  function calculateIncome(countryId) {
+    const st = state[countryId];
+    // Базовый доход + (экономика + ж/д)*10%
+    return Math.floor(st.baseIncome * (1 + 0.1 * (st.economyLevel - 1)) * (1 + 0.1 * (st.railwayLevel -1)));
+  }
+
+  // Обновляем кнопку нападения (активна если выбрана вражеская страна рядом)
+  function updateAttackButton() {
+    if(!selectedCountryId || selectedCountryId === playerCountryId) {
+      btnAttack.disabled = true;
+      return;
+    }
+    const st = state[selectedCountryId];
+    if(st.owner === 'player' || st.owner === 'AI') {
+      // Проверим соседство по карте (горизонтально и вертикально)
+      const neighbors = getNeighbors(selectedCountryId);
+      const isNeighbor = neighbors.includes(playerCountryId);
+      btnAttack.disabled = !isNeighbor || st.owner === 'player';
+    } else {
+      btnAttack.disabled = false; // Нейтральные можно атаковать без соседства
+    }
+  }
+
+  // Получить соседей по карте (id стран)
+  function getNeighbors(countryId) {
+    let result = [];
+    for(let r=0; r<mapGrid.length; r++) {
+      for(let c=0; c<mapGrid[r].length; c++) {
+        if(mapGrid[r][c] === countryId) {
+          // Проверим соседей по вертикали и горизонтали
+          [[r-1,c],[r+1,c],[r,c-1],[r,c+1]].forEach(([rr,cc]) => {
+            if(rr >=0 && rr < mapGrid.length && cc >= 0 && cc < mapGrid[0].length) {
+              const neighId = mapGrid[rr][cc];
