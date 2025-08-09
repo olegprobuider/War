@@ -138,9 +138,7 @@
 <!-- Выбор страны -->
 <div id="screenChoose">
   <h2>Выберите страну для начала</h2>
-  <div id="flagsContainer">
-    <!-- Флаги будут созданы JS -->
-  </div>
+  <div id="flagsContainer"></div>
   <button id="btnStart" disabled>Начать игру</button>
 </div>
 
@@ -155,9 +153,7 @@
 
   <div id="infoPanel">
     <h3>Информация о стране <span id="infoFlag"></span> <span id="infoName"></span></h3>
-    <div id="stats">
-      <!-- Статистика страны будет здесь -->
-    </div>
+    <div id="stats"></div>
 
     <div id="upgradePanel">
       <h4>Прокачать инфраструктуру и армию</h4>
@@ -183,8 +179,6 @@
 
 <script>
 (() => {
-  // --- Данные стран ---
-  // Страны: id, имя, флаг, начальная экономика, армия, полиция и т.п.
   const countries = [
     {id:'CN', name:'Китай', flag:'🇨🇳'},
     {id:'FR', name:'Франция', flag:'🇫🇷'},
@@ -199,8 +193,6 @@
     {id:'RU', name:'Россия', flag:'🇷🇺'},
   ];
 
-  // Карта мира - 12x6 ячеек, для простоты укажем, что каждая клетка либо пустая (null),
-  // либо содержит id страны
   const mapGrid = [
     [null, 'RU',  null, 'CN',  null, 'KZ',  null,  null,  'PL', null,  'GB', null],
     ['RU',  'RU', 'RU',  'CN',  'CN', 'KZ',  null,  null,  'PL', 'PL', 'GB', null],
@@ -210,32 +202,25 @@
     [null, 'UM',  null, null,  'AE', null,  null,  null, 'IE', 'IT',  null, null],
   ];
 
-  // По умолчанию все страны нейтральные (owner = null)
-  // у каждой страны будет состояние
   const state = {};
   countries.forEach(c => {
     state[c.id] = {
-      owner: null,            // id игрока (будет 'player') или null или 'AI'
-      economyLevel: 1,        // уровень экономики (доходы)
-      armyLevel: 1,           // армия
-      navyLevel: 1,           // флот
-      airforceLevel: 1,       // авиация
-      railwayLevel: 1,        // ж/д
-      policeLevel: 1,         // полиция
-      baseIncome: 100,        // базовый доход (можно потом варьировать)
-      currentIncome: 100,     // доход с учётом прокачки
-      isCaptured: false,      // захвачена ли игроком
+      owner: null,
+      economyLevel: 1,
+      armyLevel: 1,
+      navyLevel: 1,
+      airforceLevel: 1,
+      railwayLevel: 1,
+      policeLevel: 1,
+      baseIncome: 100,
+      isCaptured: false,
     };
   });
 
-  // Игрок
   let playerCountryId = null;
   let balance = 1000;
-
-  // Выбранная страна для просмотра/управления (id)
   let selectedCountryId = null;
 
-  // Элементы
   const screenChoose = document.getElementById('screenChoose');
   const flagsContainer = document.getElementById('flagsContainer');
   const btnStart = document.getElementById('btnStart');
@@ -253,7 +238,7 @@
   const btnAttack = document.getElementById('btnAttack');
   const logMessages = document.getElementById('logMessages');
 
-  // Заполняем выбор страны флагами
+  // Создаем флаги для выбора страны
   countries.forEach(c => {
     const span = document.createElement('span');
     span.className = 'flag-select';
@@ -263,12 +248,10 @@
     flagsContainer.appendChild(span);
   });
 
-  // Выбор игроком страны
+  // Выбор страны игроком
   flagsContainer.addEventListener('click', e => {
     if(e.target.classList.contains('flag-select')) {
-      // Снять выделение у всех
       flagsContainer.querySelectorAll('.flag-select').forEach(el => el.style.border = '');
-      // Отметить выбранную
       e.target.style.border = '3px solid #3a86ff';
       playerCountryId = e.target.dataset.id;
       btnStart.disabled = false;
@@ -277,12 +260,10 @@
 
   btnStart.addEventListener('click', () => {
     if(!playerCountryId) return;
-    // Присваиваем игроку выбранную страну
     state[playerCountryId].owner = 'player';
     state[playerCountryId].isCaptured = true;
     selectedCountryId = playerCountryId;
 
-    // Скрыть экран выбора и показать игру
     screenChoose.style.display = 'none';
     screenGame.style.display = 'block';
 
@@ -290,16 +271,12 @@
     logAdd(`Вы начали игру за страну ${getCountryById(playerCountryId).name}`);
   });
 
-  // --- Функции ---
-
   function getCountryById(id) {
     return countries.find(c => c.id === id);
   }
 
-  // Обновление всей UI
   function updateUI() {
     balanceElem.textContent = balance;
-
     playerCountryFlag.textContent = getCountryById(playerCountryId)?.flag || '';
     playerCountryName.textContent = getCountryById(playerCountryId)?.name || '';
 
@@ -308,7 +285,6 @@
     updateAttackButton();
   }
 
-  // Рендер карты мира
   function renderMap() {
     mapElem.innerHTML = '';
     for(let r=0; r<mapGrid.length; r++) {
@@ -344,7 +320,6 @@
     }
   }
 
-  // Показать данные выбранной страны
   function renderSelectedCountry() {
     if(!selectedCountryId) {
       infoFlag.textContent = '';
@@ -373,11 +348,9 @@
       <div>Полиция: ${st.policeLevel}</div>
     `;
 
-    // Апгрейды доступны только для своей страны и захваченных
     if(st.owner === 'player') {
       upgradePanel.style.display = 'block';
       attackPanel.style.display = 'block';
-      // Активируем кнопки апгрейдов с проверкой баланса
       Array.from(upgradePanel.querySelectorAll('button')).forEach(btn => {
         btn.disabled = balance < 200;
       });
@@ -387,14 +360,11 @@
     }
   }
 
-  // Расчёт дохода с страны с учётом уровней экономики и ж/д
   function calculateIncome(countryId) {
     const st = state[countryId];
-    // Базовый доход + (экономика + ж/д)*10%
     return Math.floor(st.baseIncome * (1 + 0.1 * (st.economyLevel - 1)) * (1 + 0.1 * (st.railwayLevel -1)));
   }
 
-  // Обновляем кнопку нападения (активна если выбрана вражеская страна рядом)
   function updateAttackButton() {
     if(!selectedCountryId || selectedCountryId === playerCountryId) {
       btnAttack.disabled = true;
@@ -402,22 +372,4 @@
     }
     const st = state[selectedCountryId];
     if(st.owner === 'player' || st.owner === 'AI') {
-      // Проверим соседство по карте (горизонтально и вертикально)
-      const neighbors = getNeighbors(selectedCountryId);
-      const isNeighbor = neighbors.includes(playerCountryId);
-      btnAttack.disabled = !isNeighbor || st.owner === 'player';
-    } else {
-      btnAttack.disabled = false; // Нейтральные можно атаковать без соседства
-    }
-  }
-
-  // Получить соседей по карте (id стран)
-  function getNeighbors(countryId) {
-    let result = [];
-    for(let r=0; r<mapGrid.length; r++) {
-      for(let c=0; c<mapGrid[r].length; c++) {
-        if(mapGrid[r][c] === countryId) {
-          // Проверим соседей по вертикали и горизонтали
-          [[r-1,c],[r+1,c],[r,c-1],[r,c+1]].forEach(([rr,cc]) => {
-            if(rr >=0 && rr < mapGrid.length && cc >= 0 && cc < mapGrid[0].length) {
-              const neighId = mapGrid[rr][cc];
+      const neighbors
