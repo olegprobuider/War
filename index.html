@@ -128,6 +128,32 @@
             max-width: 500px;
         }
         .hidden { display: none !important; }
+        
+        #notifications {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 300px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1001;
+            display: flex;
+            flex-direction: column-reverse;
+        }
+        .notification {
+            background-color: #333;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            margin-top: 10px;
+            animation: fadeInOut 5s forwards;
+        }
+        @keyframes fadeInOut {
+            0% { opacity: 0; transform: translateY(20px); }
+            10% { opacity: 1; transform: translateY(0); }
+            90% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(20px); }
+        }
     </style>
 </head>
 <body>
@@ -160,7 +186,7 @@
                     <h3>Прокачать</h3>
                     <button id="upgrade-infra-btn">Инфраструктура (+1) - 100💰 🏭</button>
                     <button id="upgrade-military-btn">Войска (+5) - 150💰 💂</button>
-                    <p>Для захваченной страны:</p>
+                    <p>Для захваченных стран:</p>
                     <button id="upgrade-police-btn" disabled>Полиция (+1) - 50💰 👮</button>
                 </div>
 
@@ -172,9 +198,10 @@
             </div>
         </div>
     </div>
+    
+    <div id="notifications"></div>
 
     <script>
-        // game.js - Вся логика игры здесь!
         const countriesData = {
             '🇨🇳': { name: 'Китай', military: 25, infrastructure: 5, income: 15 },
             '🇬🇧': { name: 'Британия', military: 15, infrastructure: 8, income: 10 },
@@ -182,15 +209,15 @@
             '🇺🇦': { name: 'Украина', military: 10, infrastructure: 7, income: 8 },
             '🇷🇺': { name: 'Россия', military: 20, infrastructure: 6, income: 12 },
             '🇵🇱': { name: 'Польша', military: 8, infrastructure: 4, income: 6 },
-            '🇪🇦': { name: 'Испания', military: 9, infrastructure: 5, income: 7 },
+            '🇪🇸': { name: 'Испания', military: 9, infrastructure: 5, income: 7 }, // Исправил флаг
             '🇮🇹': { name: 'Италия', military: 7, infrastructure: 6, income: 7 },
             '🇰🇿': { name: 'Казахстан', military: 6, infrastructure: 3, income: 5 },
             '🇮🇪': { name: 'Ирландия', military: 5, infrastructure: 9, income: 6 },
         };
 
-        const mapLayout = [
-            '  🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦',
-            ' 🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦',
+        let mapLayout = [
+            '🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦',
+            '🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦',
             '🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦',
             '🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦',
             '🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦',
@@ -201,9 +228,21 @@
             '🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦',
         ];
         
-        // Добавление флагов на карту. Это просто для примера.
-        mapLayout[3] = mapLayout[3].substr(0, 5) + '🇺🇦' + mapLayout[3].substr(7);
-        mapLayout[6] = mapLayout[6].substr(0, 10) + '🇷🇺' + mapLayout[6].substr(12);
+        // Позиции стран на карте
+        const countryPositions = {
+            '🇺🇦': { row: 3, col: 7 }, '🇷🇺': { row: 4, col: 13 }, '🇨🇳': { row: 6, col: 15 },
+            '🇬🇧': { row: 2, col: 5 }, '🇺🇸': { row: 4, col: 2 }, '🇵🇱': { row: 3, col: 6 },
+            '🇪🇸': { row: 4, col: 5 }, '🇮🇹': { row: 4, col: 8 }, '🇰🇿': { row: 5, col: 12 },
+            '🇮🇪': { row: 3, col: 4 }
+        };
+        
+        // Заполняем карту флагами
+        for(const flag in countryPositions) {
+            const pos = countryPositions[flag];
+            const row = mapLayout[pos.row].split('');
+            row[pos.col] = flag;
+            mapLayout[pos.row] = row.join('');
+        }
 
         let gameState = {
             player: {
@@ -212,13 +251,11 @@
                 money: 500,
                 military: 0,
                 infrastructure: 0,
-                conquered: [],
+                conquered: new Map(), // Используем Map для удобства
             },
             countries: {}
         };
         
-        let selectedTargetFlag = null;
-
         // Элементы DOM
         const gameMapEl = document.getElementById('game-map');
         const playerCountryEl = document.getElementById('player-country');
@@ -232,6 +269,17 @@
         const attackTargetsList = document.getElementById('attack-targets-list');
         const selectCountryModal = document.getElementById('select-country-modal');
         const gameUI = document.getElementById('map-and-ui');
+        const notificationsEl = document.getElementById('notifications');
+
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            notification.innerText = message;
+            notificationsEl.appendChild(notification);
+            setTimeout(() => {
+                notification.remove();
+            }, 5000);
+        }
 
         function updateUI() {
             playerCountryEl.innerText = `${gameState.player.flag} ${gameState.player.name}`;
@@ -240,17 +288,23 @@
             playerInfrastructureEl.innerText = gameState.player.infrastructure;
             
             const totalIncome = gameState.player.infrastructure * 5 + 
-                                gameState.player.conquered.reduce((sum, c) => sum + (c.police * 3), 0);
+                                Array.from(gameState.player.conquered.values()).reduce((sum, c) => sum + (c.police * 3), 0);
             playerIncomeEl.innerText = totalIncome;
 
             upgradeInfraBtn.disabled = gameState.player.money < 100;
             upgradeMilitaryBtn.disabled = gameState.player.money < 150;
-            upgradePoliceBtn.disabled = gameState.player.money < 50 || !gameState.player.conquered.length;
+            upgradePoliceBtn.disabled = gameState.player.money < 50 || gameState.player.conquered.size === 0;
         }
 
         function drawMap() {
-            let mapString = mapLayout.map(row => row.replace(/ /g, ' ')).join('\n');
-            gameMapEl.innerText = mapString;
+            let currentMap = [...mapLayout];
+            for (const [flag, country] of gameState.player.conquered) {
+                const pos = countryPositions[flag];
+                const row = currentMap[pos.row].split('');
+                row[pos.col] = gameState.player.flag;
+                currentMap[pos.row] = row.join('');
+            }
+            gameMapEl.innerText = currentMap.join('\n');
         }
 
         function createCountrySelection() {
@@ -270,7 +324,6 @@
             gameState.player.military = country.military;
             gameState.player.infrastructure = country.infrastructure;
             
-            // Инициализация остальных стран
             for (const otherFlag in countriesData) {
                 if (otherFlag !== flag) {
                     gameState.countries[otherFlag] = {
@@ -306,47 +359,46 @@
         function attackCountry(targetFlag) {
             const targetCountry = gameState.countries[targetFlag];
             if (gameState.player.military > targetCountry.military) {
-                alert(`Вы захватили ${targetCountry.name}!`);
+                showNotification(`Вы успешно захватили ${targetCountry.name}!`);
                 targetCountry.isConquered = true;
-                targetCountry.conqueredBy = gameState.player.flag;
-                targetCountry.police = 1; // Начальная полиция
-                gameState.player.conquered.push(targetCountry);
+                targetCountry.police = 1;
+                gameState.player.conquered.set(targetFlag, targetCountry);
                 
-                // Удаляем страну из списка целей
                 populateAttackTargets();
                 updateUI();
+                drawMap();
             } else {
-                alert(`Нападение на ${targetCountry.name} провалилось. Вы потеряли 50 солдат.`);
+                showNotification(`Нападение на ${targetCountry.name} провалилось. Вы потеряли 50 солдат.`);
                 gameState.player.military = Math.max(0, gameState.player.military - 50);
                 updateUI();
             }
         }
         
         function checkRebellion() {
-            gameState.player.conquered.forEach(country => {
-                // Шанс восстания 50/50, если полиция не прокачана.
+            // Используем Array.from() для итерации по Map
+            Array.from(gameState.player.conquered.values()).forEach(country => {
                 const rebellionChance = 0.5 - (country.police * 0.1);
                 if (Math.random() < rebellionChance) {
-                    alert(`В ${country.name} вспыхнуло восстание! Вы потеряли контроль.`);
-                    
-                    // Возвращаем страну в исходное состояние
-                    country.isConquered = false;
-                    country.police = 0;
-                    country.conqueredBy = null;
-                    
-                    // Удаляем её из списка захваченных
-                    gameState.player.conquered = gameState.player.conquered.filter(c => c.flag !== country.flag);
-                    
-                    // Возвращаем в список целей для нападения
-                    populateAttackTargets();
+                    if (Math.random() > 0.5) { // 50/50 шанс успешного подавления
+                        showNotification(`Восстание в ${country.name} было подавлено.`);
+                    } else {
+                        showNotification(`В ${country.name} вспыхнуло восстание! Вы потеряли контроль.`);
+                        
+                        country.isConquered = false;
+                        country.police = 0;
+                        gameState.player.conquered.delete(country.flag);
+                        
+                        populateAttackTargets();
+                        drawMap();
+                    }
                 }
             });
         }
         
         function gameLoop() {
-            gameState.player.money += gameState.player.infrastructure * 5; // Доход от своей инфраструктуры
-            gameState.player.conquered.forEach(country => {
-                gameState.player.money += country.police * 3; // Доход от полиции в захваченной стране
+            gameState.player.money += gameState.player.infrastructure * 5;
+            Array.from(gameState.player.conquered.values()).forEach(country => {
+                gameState.player.money += country.police * 3;
             });
             
             checkRebellion();
@@ -371,10 +423,10 @@
         });
 
         upgradePoliceBtn.addEventListener('click', () => {
-            if (gameState.player.money >= 50 && gameState.player.conquered.length) {
+            if (gameState.player.money >= 50 && gameState.player.conquered.size > 0) {
                 gameState.player.money -= 50;
-                // Прокачиваем полицию у всех захваченных стран сразу, чтобы упростить
                 gameState.player.conquered.forEach(c => c.police++);
+                showNotification(`Полиция во всех захваченных странах усилена! 👮`);
                 updateUI();
             }
         });
@@ -382,13 +434,11 @@
         function startGame() {
             drawMap();
             populateAttackTargets();
-            // Основной цикл игры, обновляется каждую секунду
             setInterval(gameLoop, 1000); 
         }
         
-        // Запускаем выбор страны при загрузке страницы
         document.addEventListener('DOMContentLoaded', createCountrySelection);
     </script>
 </body>
-  </html>
-  
+    </html>
+    
