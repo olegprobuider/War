@@ -135,14 +135,12 @@
 </head>
 <body>
 
-<!-- Выбор страны -->
 <div id="screenChoose">
   <h2>Выберите страну для начала</h2>
   <div id="flagsContainer"></div>
   <button id="btnStart" disabled>Начать игру</button>
 </div>
 
-<!-- Игровой экран -->
 <div id="screenGame" style="display:none;">
   <div id="headerGame">
     <div>Баланс: <span id="balance">1000</span> 💰</div>
@@ -263,17 +261,110 @@
     state[playerCountryId].owner = 'player';
     state[playerCountryId].isCaptured = true;
     selectedCountryId = playerCountryId;
+    
+    // Choose an AI country to start with
+    const availableAI = countries.filter(c => c.id !== playerCountryId && c.id !== 'UA' && c.id !== 'IE');
+    const aiCountry = availableAI[Math.floor(Math.random() * availableAI.length)];
+    if (aiCountry) {
+        state[aiCountry.id].owner = 'AI';
+        state[aiCountry.id].isCaptured = true;
+    }
 
     screenChoose.style.display = 'none';
     screenGame.style.display = 'block';
 
     updateUI();
     logAdd(`Вы начали игру за страну ${getCountryById(playerCountryId).name}`);
+    startGameLoop(); // Start the game loop
   });
 
+  // Attach upgrade button event listeners
+  upgradePanel.addEventListener('click', e => {
+    const btn = e.target.closest('button');
+    if(btn && !btn.disabled) {
+        const upgradeType = btn.dataset.upgrade;
+        const cost = 200;
+        if(balance >= cost) {
+            balance -= cost;
+            state[selectedCountryId][`${upgradeType}Level`]++;
+            updateUI();
+            logAdd(`Прокачана ${upgradeType} для ${getCountryById(selectedCountryId).name}`);
+        }
+    }
+  });
+
+  // Attach attack button event listener
+  btnAttack.addEventListener('click', () => {
+    if (selectedCountryId && selectedCountryId !== playerCountryId && btnAttack.disabled === false) {
+      const attackerCountryId = playerCountryId;
+      const defenderCountryId = selectedCountryId;
+      const attackerState = state[attackerCountryId];
+      const defenderState = state[defenderCountryId];
+
+      const attackerStrength = attackerState.armyLevel * 100 + attackerState.airforceLevel * 50 + attackerState.navyLevel * 50;
+      const defenderStrength = defenderState.armyLevel * 100 + defenderState.airforceLevel * 50 + defenderState.navyLevel * 50;
+
+      const randomFactor = Math.random() * 0.5 + 0.75; // Random factor between 0.75 and 1.25
+      const totalAttackerStrength = attackerStrength * randomFactor;
+      const totalDefenderStrength = defenderStrength * randomFactor;
+      
+      const policeEffect = defenderState.policeLevel * 10;
+      const finalDefenderStrength = totalDefenderStrength + policeEffect;
+
+      if (totalAttackerStrength > finalDefenderStrength) {
+          defenderState.owner = 'player';
+          defenderState.isCaptured = true;
+          logAdd(`🎉 Вы успешно захватили ${getCountryById(defenderCountryId).name}!`);
+      } else {
+          logAdd(`❌ Нападение на ${getCountryById(defenderCountryId).name} провалилось.`);
+      }
+      updateUI();
+    }
+  });
+  
   function getCountryById(id) {
     return countries.find(c => c.id === id);
   }
+
+  function getNeighboringCountries(countryId) {
+    const neighbors = new Set();
+    const visited = new Set();
+    
+    // Find all cells of the country on the map
+    const countryCells = [];
+    for (let r = 0; r < mapGrid.length; r++) {
+        for (let c = 0; c < mapGrid[r].length; c++) {
+            if (mapGrid[r][c] === countryId) {
+                countryCells.push({r, c});
+            }
+        }
+    }
+
+    // Check adjacent cells for neighbors
+    countryCells.forEach(cell => {
+        const { r, c } = cell;
+        const directions = [
+            { dr: -1, dc: 0 }, { dr: 1, dc: 0 },
+            { dr: 0, dc: -1 }, { dr: 0, dc: 1 }
+        ];
+
+        directions.forEach(dir => {
+            const newR = r + dir.dr;
+            const newC = c + dir.dc;
+
+            if (newR >= 0 && newR < mapGrid.length && newC >= 0 && newC < mapGrid[0].length) {
+                const neighborId = mapGrid[newR][newC];
+                if (neighborId && neighborId !== countryId && !visited.has(neighborId)) {
+                    neighbors.add(neighborId);
+                    visited.add(neighborId);
+                }
+            }
+        });
+    });
+
+    return Array.from(neighbors);
+  }
+
 
   function updateUI() {
     balanceElem.textContent = balance;
@@ -302,11 +393,14 @@
           const country = getCountryById(cellCountryId);
           const st = state[cellCountryId];
           cell.textContent = country.flag;
-          cell.title = country.name + (st.owner === 'player' ? ' (Ваша страна)' : st.owner === 'AI' ? ' (Враг)' : ' (Нейтральная)');
+          cell.title = `${country.name} (${st.owner === 'player' ? 'Ваша страна' : st.owner === 'AI' ? 'Враг' : 'Нейтральная'})`;
           cell.dataset.id = cellCountryId;
 
           if(st.owner === 'player') cell.classList.add('owned');
           else if(st.owner === 'AI') cell.classList.add('enemy');
+          else if (!st.isCaptured) { // Neutral countries
+            cell.style.backgroundColor = '#a0d8ff';
+          }
         }
         cell.addEventListener('click', () => {
           if(cell.dataset.id) {
@@ -350,26 +444,88 @@
 
     if(st.owner === 'player') {
       upgradePanel.style.display = 'block';
-      attackPanel.style.display = 'block';
+      attackPanel.style.display = 'none';
       Array.from(upgradePanel.querySelectorAll('button')).forEach(btn => {
         btn.disabled = balance < 200;
       });
     } else {
       upgradePanel.style.display = 'none';
-      attackPanel.style.display = 'none';
+      attackPanel.style.display = 'block';
     }
+    updateAttackButton();
   }
 
   function calculateIncome(countryId) {
     const st = state[countryId];
+    if (st.owner !== 'player') return 0;
     return Math.floor(st.baseIncome * (1 + 0.1 * (st.economyLevel - 1)) * (1 + 0.1 * (st.railwayLevel -1)));
   }
 
   function updateAttackButton() {
-    if(!selectedCountryId || selectedCountryId === playerCountryId) {
+    if (!selectedCountryId || selectedCountryId === playerCountryId) {
       btnAttack.disabled = true;
       return;
     }
-    const st = state[selectedCountryId];
-    if(st.owner === 'player' || st.owner === 'AI') {
-      const neighbors
+    
+    const selectedCountryState = state[selectedCountryId];
+    if (selectedCountryState.owner === 'player') {
+        btnAttack.disabled = true;
+        return;
+    }
+    
+    const playerOwnedCountries = Object.keys(state).filter(id => state[id].owner === 'player');
+    let canAttack = false;
+    for (const ownedId of playerOwnedCountries) {
+        const neighbors = getNeighboringCountries(ownedId);
+        if (neighbors.includes(selectedCountryId)) {
+            canAttack = true;
+            break;
+        }
+    }
+    
+    btnAttack.disabled = !canAttack;
+  }
+  
+  function logAdd(message) {
+      const p = document.createElement('p');
+      p.innerHTML = message;
+      logMessages.prepend(p);
+      if (logMessages.children.length > 5) {
+          logMessages.lastChild.remove();
+      }
+  }
+  
+  // Game loop to simulate turns
+  function startGameLoop() {
+      setInterval(() => {
+          // Player income
+          let totalIncome = 0;
+          Object.keys(state).forEach(id => {
+              if (state[id].owner === 'player') {
+                  totalIncome += calculateIncome(id);
+              }
+          });
+          balance += totalIncome;
+          logAdd(`💰 Получено ${totalIncome} от ваших стран.`);
+          
+          // AI Turn (simple logic for now)
+          const aiCountries = Object.keys(state).filter(id => state[id].owner === 'AI');
+          aiCountries.forEach(aiId => {
+              const neighbors = getNeighboringCountries(aiId);
+              const neutralNeighbors = neighbors.filter(id => state[id].owner === null);
+              if (neutralNeighbors.length > 0) {
+                  const targetCountryId = neutralNeighbors[Math.floor(Math.random() * neutralNeighbors.length)];
+                  state[targetCountryId].owner = 'AI';
+                  state[targetCountryId].isCaptured = true;
+                  logAdd(`Враг захватил ${getCountryById(targetCountryId).name}!`);
+              }
+          });
+          
+          updateUI();
+      }, 5000); // Every 5 seconds
+  }
+})();
+</script>
+</body>
+  </html>
+  
