@@ -183,7 +183,6 @@
     {id:'GB', name:'Великобритания', flag:'🇬🇧'},
     {id:'PL', name:'Польша', flag:'🇵🇱'},
     {id:'UM', name:'Острова США', flag:'🇺🇲'},
-    {id:'UA', name:'Украина', flag:'🇺🇦'},
     {id:'AE', name:'ОАЭ', flag:'🇦🇪'},
     {id:'IE', name:'Ирландия', flag:'🇮🇪'},
     {id:'IT', name:'Италия', flag:'🇮🇹'},
@@ -191,26 +190,43 @@
     {id:'RU', name:'Россия', flag:'🇷🇺'},
   ];
 
+  const initialStats = {
+    CN: { economyLevel: 3, armyLevel: 4, navyLevel: 3, airforceLevel: 3, railwayLevel: 2, policeLevel: 2, baseIncome: 150 },
+    FR: { economyLevel: 4, armyLevel: 3, navyLevel: 3, airforceLevel: 3, railwayLevel: 3, policeLevel: 3, baseIncome: 140 },
+    GB: { economyLevel: 4, armyLevel: 3, navyLevel: 4, airforceLevel: 4, railwayLevel: 3, policeLevel: 3, baseIncome: 145 },
+    PL: { economyLevel: 2, armyLevel: 2, navyLevel: 1, airforceLevel: 2, railwayLevel: 2, policeLevel: 2, baseIncome: 90 },
+    UM: { economyLevel: 3, armyLevel: 3, navyLevel: 4, airforceLevel: 4, railwayLevel: 3, policeLevel: 2, baseIncome: 130 },
+    AE: { economyLevel: 3, armyLevel: 2, navyLevel: 1, airforceLevel: 2, railwayLevel: 1, policeLevel: 3, baseIncome: 110 },
+    IE: { economyLevel: 2, armyLevel: 1, navyLevel: 1, airforceLevel: 1, railwayLevel: 2, policeLevel: 3, baseIncome: 100 },
+    IT: { economyLevel: 3, armyLevel: 3, navyLevel: 2, airforceLevel: 3, railwayLevel: 3, policeLevel: 2, baseIncome: 120 },
+    KZ: { economyLevel: 2, armyLevel: 2, navyLevel: 0, airforceLevel: 1, railwayLevel: 2, policeLevel: 2, baseIncome: 80 },
+    RU: { economyLevel: 4, armyLevel: 5, navyLevel: 4, airforceLevel: 4, railwayLevel: 3, policeLevel: 3, baseIncome: 160 },
+  };
+
   const mapGrid = [
-    [null, 'RU',  null, 'CN',  null, 'KZ',  null,  null,  'PL', null,  'GB', null],
-    ['RU',  'RU', 'RU',  'CN',  'CN', 'KZ',  null,  null,  'PL', 'PL', 'GB', null],
-    [null, 'RU',  null, 'CN',  null, null,  null,  null,  null, 'PL', 'GB', 'FR'],
-    [null, null,  null, null,  null, null,  null,  null,  null, null, 'IE', 'FR'],
-    [null, 'UM',  null, null,  'AE', null,  null,  'IE', 'IE', 'IT', 'IT', null],
-    [null, 'UM',  null, null,  'AE', null,  null,  null, 'IE', 'IT',  null, null],
+    ['RU', 'RU', null,  'CN',  'CN',  null,  'KZ',  'KZ', null,  'PL',  'PL', null],
+    ['RU', null, null,  'CN',  null,  null,  'KZ',  null, null,  'PL',  'GB', 'GB'],
+    [null, null, null,  null,  null,  null,  null,  null, null,  'PL',  'GB', 'FR'],
+    [null, null, null,  null,  null,  null,  null,  null, 'IE', 'IE',  'FR', 'FR'],
+    [null, 'UM', null,  null,  'AE',  null,  null,  'IE', 'IE', 'IT',  'IT', null],
+    [null, 'UM', null,  null,  'AE',  null,  null,  null, 'IE', 'IT',  null, null],
+    [null, null, null,  null,  null,  null,  null,  null, null,  null,  null, null],
   ];
 
   const state = {};
+
+  // Инициализация состояния стран с их уникальной статистикой
   countries.forEach(c => {
+    const stats = initialStats[c.id];
     state[c.id] = {
       owner: null,
-      economyLevel: 1,
-      armyLevel: 1,
-      navyLevel: 1,
-      airforceLevel: 1,
-      railwayLevel: 1,
-      policeLevel: 1,
-      baseIncome: 100,
+      economyLevel: stats.economyLevel,
+      armyLevel: stats.armyLevel,
+      navyLevel: stats.navyLevel,
+      airforceLevel: stats.airforceLevel,
+      railwayLevel: stats.railwayLevel,
+      policeLevel: stats.policeLevel,
+      baseIncome: stats.baseIncome,
       isCaptured: false,
     };
   });
@@ -233,299 +249,4 @@
   const statsElem = document.getElementById('stats');
   const upgradePanel = document.getElementById('upgradePanel');
   const attackPanel = document.getElementById('attackPanel');
-  const btnAttack = document.getElementById('btnAttack');
-  const logMessages = document.getElementById('logMessages');
-
-  // Создаем флаги для выбора страны
-  countries.forEach(c => {
-    const span = document.createElement('span');
-    span.className = 'flag-select';
-    span.textContent = c.flag;
-    span.title = c.name;
-    span.dataset.id = c.id;
-    flagsContainer.appendChild(span);
-  });
-
-  // Выбор страны игроком
-  flagsContainer.addEventListener('click', e => {
-    if(e.target.classList.contains('flag-select')) {
-      flagsContainer.querySelectorAll('.flag-select').forEach(el => el.style.border = '');
-      e.target.style.border = '3px solid #3a86ff';
-      playerCountryId = e.target.dataset.id;
-      btnStart.disabled = false;
-    }
-  });
-
-  btnStart.addEventListener('click', () => {
-    if(!playerCountryId) return;
-    state[playerCountryId].owner = 'player';
-    state[playerCountryId].isCaptured = true;
-    selectedCountryId = playerCountryId;
-    
-    // Choose an AI country to start with
-    const availableAI = countries.filter(c => c.id !== playerCountryId && c.id !== 'UA' && c.id !== 'IE');
-    const aiCountry = availableAI[Math.floor(Math.random() * availableAI.length)];
-    if (aiCountry) {
-        state[aiCountry.id].owner = 'AI';
-        state[aiCountry.id].isCaptured = true;
-    }
-
-    screenChoose.style.display = 'none';
-    screenGame.style.display = 'block';
-
-    updateUI();
-    logAdd(`Вы начали игру за страну ${getCountryById(playerCountryId).name}`);
-    startGameLoop(); // Start the game loop
-  });
-
-  // Attach upgrade button event listeners
-  upgradePanel.addEventListener('click', e => {
-    const btn = e.target.closest('button');
-    if(btn && !btn.disabled) {
-        const upgradeType = btn.dataset.upgrade;
-        const cost = 200;
-        if(balance >= cost) {
-            balance -= cost;
-            state[selectedCountryId][`${upgradeType}Level`]++;
-            updateUI();
-            logAdd(`Прокачана ${upgradeType} для ${getCountryById(selectedCountryId).name}`);
-        }
-    }
-  });
-
-  // Attach attack button event listener
-  btnAttack.addEventListener('click', () => {
-    if (selectedCountryId && selectedCountryId !== playerCountryId && btnAttack.disabled === false) {
-      const attackerCountryId = playerCountryId;
-      const defenderCountryId = selectedCountryId;
-      const attackerState = state[attackerCountryId];
-      const defenderState = state[defenderCountryId];
-
-      const attackerStrength = attackerState.armyLevel * 100 + attackerState.airforceLevel * 50 + attackerState.navyLevel * 50;
-      const defenderStrength = defenderState.armyLevel * 100 + defenderState.airforceLevel * 50 + defenderState.navyLevel * 50;
-
-      const randomFactor = Math.random() * 0.5 + 0.75; // Random factor between 0.75 and 1.25
-      const totalAttackerStrength = attackerStrength * randomFactor;
-      const totalDefenderStrength = defenderStrength * randomFactor;
-      
-      const policeEffect = defenderState.policeLevel * 10;
-      const finalDefenderStrength = totalDefenderStrength + policeEffect;
-
-      if (totalAttackerStrength > finalDefenderStrength) {
-          defenderState.owner = 'player';
-          defenderState.isCaptured = true;
-          logAdd(`🎉 Вы успешно захватили ${getCountryById(defenderCountryId).name}!`);
-      } else {
-          logAdd(`❌ Нападение на ${getCountryById(defenderCountryId).name} провалилось.`);
-      }
-      updateUI();
-    }
-  });
-  
-  function getCountryById(id) {
-    return countries.find(c => c.id === id);
-  }
-
-  function getNeighboringCountries(countryId) {
-    const neighbors = new Set();
-    const visited = new Set();
-    
-    // Find all cells of the country on the map
-    const countryCells = [];
-    for (let r = 0; r < mapGrid.length; r++) {
-        for (let c = 0; c < mapGrid[r].length; c++) {
-            if (mapGrid[r][c] === countryId) {
-                countryCells.push({r, c});
-            }
-        }
-    }
-
-    // Check adjacent cells for neighbors
-    countryCells.forEach(cell => {
-        const { r, c } = cell;
-        const directions = [
-            { dr: -1, dc: 0 }, { dr: 1, dc: 0 },
-            { dr: 0, dc: -1 }, { dr: 0, dc: 1 }
-        ];
-
-        directions.forEach(dir => {
-            const newR = r + dir.dr;
-            const newC = c + dir.dc;
-
-            if (newR >= 0 && newR < mapGrid.length && newC >= 0 && newC < mapGrid[0].length) {
-                const neighborId = mapGrid[newR][newC];
-                if (neighborId && neighborId !== countryId && !visited.has(neighborId)) {
-                    neighbors.add(neighborId);
-                    visited.add(neighborId);
-                }
-            }
-        });
-    });
-
-    return Array.from(neighbors);
-  }
-
-
-  function updateUI() {
-    balanceElem.textContent = balance;
-    playerCountryFlag.textContent = getCountryById(playerCountryId)?.flag || '';
-    playerCountryName.textContent = getCountryById(playerCountryId)?.name || '';
-
-    renderMap();
-    renderSelectedCountry();
-    updateAttackButton();
-  }
-
-  function renderMap() {
-    mapElem.innerHTML = '';
-    for(let r=0; r<mapGrid.length; r++) {
-      for(let c=0; c<mapGrid[r].length; c++) {
-        const cellCountryId = mapGrid[r][c];
-        const cell = document.createElement('div');
-        cell.className = 'map-cell';
-        if(cellCountryId === null) {
-          cell.classList.add('neutral');
-          cell.textContent = '🟦';
-          cell.title = 'Нейтральная территория';
-          cell.dataset.id = '';
-          cell.style.cursor = 'default';
-        } else {
-          const country = getCountryById(cellCountryId);
-          const st = state[cellCountryId];
-          cell.textContent = country.flag;
-          cell.title = `${country.name} (${st.owner === 'player' ? 'Ваша страна' : st.owner === 'AI' ? 'Враг' : 'Нейтральная'})`;
-          cell.dataset.id = cellCountryId;
-
-          if(st.owner === 'player') cell.classList.add('owned');
-          else if(st.owner === 'AI') cell.classList.add('enemy');
-          else if (!st.isCaptured) { // Neutral countries
-            cell.style.backgroundColor = '#a0d8ff';
-          }
-        }
-        cell.addEventListener('click', () => {
-          if(cell.dataset.id) {
-            selectedCountryId = cell.dataset.id;
-            renderSelectedCountry();
-            updateAttackButton();
-          }
-        });
-        mapElem.appendChild(cell);
-      }
-    }
-  }
-
-  function renderSelectedCountry() {
-    if(!selectedCountryId) {
-      infoFlag.textContent = '';
-      infoName.textContent = '';
-      statsElem.innerHTML = 'Выберите страну на карте';
-      upgradePanel.style.display = 'none';
-      attackPanel.style.display = 'none';
-      return;
-    }
-    const c = getCountryById(selectedCountryId);
-    const st = state[selectedCountryId];
-    infoFlag.textContent = c.flag;
-    infoName.textContent = c.name;
-
-    let ownerStr = st.owner === 'player' ? 'Вы' : st.owner === 'AI' ? 'Враг' : 'Нейтральная';
-    let capturedStr = st.isCaptured ? 'Захвачена' : 'Свободна';
-
-    statsElem.innerHTML = `
-      <div>Владелец: <b>${ownerStr}</b></div>
-      <div>Состояние: <b>${capturedStr}</b></div>
-      <div>Экономика: ${st.economyLevel} (доход: ${calculateIncome(selectedCountryId)})</div>
-      <div>Армия: ${st.armyLevel}</div>
-      <div>Флот: ${st.navyLevel}</div>
-      <div>Авиация: ${st.airforceLevel}</div>
-      <div>Железная дорога: ${st.railwayLevel}</div>
-      <div>Полиция: ${st.policeLevel}</div>
-    `;
-
-    if(st.owner === 'player') {
-      upgradePanel.style.display = 'block';
-      attackPanel.style.display = 'none';
-      Array.from(upgradePanel.querySelectorAll('button')).forEach(btn => {
-        btn.disabled = balance < 200;
-      });
-    } else {
-      upgradePanel.style.display = 'none';
-      attackPanel.style.display = 'block';
-    }
-    updateAttackButton();
-  }
-
-  function calculateIncome(countryId) {
-    const st = state[countryId];
-    if (st.owner !== 'player') return 0;
-    return Math.floor(st.baseIncome * (1 + 0.1 * (st.economyLevel - 1)) * (1 + 0.1 * (st.railwayLevel -1)));
-  }
-
-  function updateAttackButton() {
-    if (!selectedCountryId || selectedCountryId === playerCountryId) {
-      btnAttack.disabled = true;
-      return;
-    }
-    
-    const selectedCountryState = state[selectedCountryId];
-    if (selectedCountryState.owner === 'player') {
-        btnAttack.disabled = true;
-        return;
-    }
-    
-    const playerOwnedCountries = Object.keys(state).filter(id => state[id].owner === 'player');
-    let canAttack = false;
-    for (const ownedId of playerOwnedCountries) {
-        const neighbors = getNeighboringCountries(ownedId);
-        if (neighbors.includes(selectedCountryId)) {
-            canAttack = true;
-            break;
-        }
-    }
-    
-    btnAttack.disabled = !canAttack;
-  }
-  
-  function logAdd(message) {
-      const p = document.createElement('p');
-      p.innerHTML = message;
-      logMessages.prepend(p);
-      if (logMessages.children.length > 5) {
-          logMessages.lastChild.remove();
-      }
-  }
-  
-  // Game loop to simulate turns
-  function startGameLoop() {
-      setInterval(() => {
-          // Player income
-          let totalIncome = 0;
-          Object.keys(state).forEach(id => {
-              if (state[id].owner === 'player') {
-                  totalIncome += calculateIncome(id);
-              }
-          });
-          balance += totalIncome;
-          logAdd(`💰 Получено ${totalIncome} от ваших стран.`);
-          
-          // AI Turn (simple logic for now)
-          const aiCountries = Object.keys(state).filter(id => state[id].owner === 'AI');
-          aiCountries.forEach(aiId => {
-              const neighbors = getNeighboringCountries(aiId);
-              const neutralNeighbors = neighbors.filter(id => state[id].owner === null);
-              if (neutralNeighbors.length > 0) {
-                  const targetCountryId = neutralNeighbors[Math.floor(Math.random() * neutralNeighbors.length)];
-                  state[targetCountryId].owner = 'AI';
-                  state[targetCountryId].isCaptured = true;
-                  logAdd(`Враг захватил ${getCountryById(targetCountryId).name}!`);
-              }
-          });
-          
-          updateUI();
-      }, 5000); // Every 5 seconds
-  }
-})();
-</script>
-</body>
-                              </html>
-  
+  const btnAttack = document.getElementBy
