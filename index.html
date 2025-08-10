@@ -159,6 +159,9 @@
             width: 50px;
             text-align: center;
         }
+        #spy-info p {
+            margin: 5px 0;
+        }
     </style>
 </head>
 <body>
@@ -222,6 +225,7 @@
                 <button id="create-alliance-btn">Создать Альянс</button>
                 <button id="market-btn">Рынок</button>
                 <button id="news-btn">Новости 📻</button>
+                <button id="spy-country-btn">🕵️ Шпионаж (9000💰)</button>
             </div>
             
             <div id="alliance-info" style="display: none;">
@@ -292,19 +296,32 @@
         <div id="news-feed"></div>
     </div>
 
+    <div class="popup-overlay" id="spy-overlay"></div>
+    <div class="popup" id="spy-popup">
+        <div class="popup-header">
+            <h3>Шпионаж</h3>
+            <button class="close-btn" id="close-spy-popup">&times;</button>
+        </div>
+        <div id="spy-info-container">
+            <p>Выберите страну для шпионажа (9000💰):</p>
+            <div id="spy-country-list" class="country-option"></div>
+            <div id="spy-info" style="display: none; text-align: left;"></div>
+        </div>
+    </div>
+
     <script>
         const countries = {
-            'cn': { name: 'Китай', flag: '🇨🇳', income: 200, military: 15, infrastructure: 10, social: 5, controlled: false, police: 0, inAlliance: false, resources: ['oil'] },
-            'fr': { name: 'Франция', flag: '🇨🇵', income: 150, military: 10, infrastructure: 8, social: 8, controlled: false, police: 0, inAlliance: false, resources: [] },
-            'gb': { name: 'Великобритания', flag: '🇬🇧', income: 160, military: 12, infrastructure: 9, social: 7, controlled: false, police: 0, inAlliance: false, resources: [] },
-            'pl': { name: 'Польша', flag: '🇵🇱', income: 100, military: 8, infrastructure: 6, social: 6, controlled: false, police: 0, inAlliance: false, resources: ['wheat'] },
-            'us': { name: 'США', flag: '🇺🇲', income: 250, military: 20, infrastructure: 15, social: 10, controlled: false, police: 0, inAlliance: false, resources: ['oil'] },
-            'ua': { name: 'Украина', flag: '🇺🇦', income: 90, military: 10, infrastructure: 7, social: 5, controlled: false, police: 0, inAlliance: false, resources: ['wheat'] },
-            'es': { name: 'Испания', flag: '🇪🇦', income: 110, military: 8, infrastructure: 7, social: 7, controlled: false, police: 0, inAlliance: false, resources: ['wheat'] },
-            'ie': { name: 'Ирландия', flag: '🇮🇪', income: 80, military: 5, infrastructure: 5, social: 6, controlled: false, police: 0, inAlliance: false, resources: ['wheat'] },
-            'it': { name: 'Италия', flag: '🇮🇹', income: 120, military: 9, infrastructure: 8, social: 9, controlled: false, police: 0, inAlliance: false, resources: ['wheat'] },
-            'kz': { name: 'Казахстан', flag: '🇰🇿', income: 70, military: 6, infrastructure: 5, social: 4, controlled: false, police: 0, inAlliance: false, resources: ['oil'] },
-            'ru': { name: 'Россия', flag: '🇷🇺', income: 180, military: 18, infrastructure: 12, social: 6, controlled: false, police: 0, inAlliance: false, resources: ['oil'] }
+            'cn': { name: 'Китай', flag: '🇨🇳', income: 200, military: 15, infrastructure: 10, social: 5, controlled: false, police: 0, inAlliance: false, resources: ['oil'], population: 1400000000 },
+            'fr': { name: 'Франция', flag: '🇨🇵', income: 150, military: 10, infrastructure: 8, social: 8, controlled: false, police: 0, inAlliance: false, resources: [], population: 65000000 },
+            'gb': { name: 'Великобритания', flag: '🇬🇧', income: 160, military: 12, infrastructure: 9, social: 7, controlled: false, police: 0, inAlliance: false, resources: [], population: 67000000 },
+            'pl': { name: 'Польша', flag: '🇵🇱', income: 100, military: 8, infrastructure: 6, social: 6, controlled: false, police: 0, inAlliance: false, resources: ['wheat'], population: 38000000 },
+            'us': { name: 'США', flag: '🇺🇲', income: 250, military: 20, infrastructure: 15, social: 10, controlled: false, police: 0, inAlliance: false, resources: ['oil'], population: 330000000 },
+            'ua': { name: 'Украина', flag: '🇺🇦', income: 90, military: 10, infrastructure: 7, social: 5, controlled: false, police: 0, inAlliance: false, resources: ['wheat'], population: 41000000 },
+            'es': { name: 'Испания', flag: '🇪🇦', income: 110, military: 8, infrastructure: 7, social: 7, controlled: false, police: 0, inAlliance: false, resources: ['wheat'], population: 47000000 },
+            'ie': { name: 'Ирландия', flag: '🇮🇪', income: 80, military: 5, infrastructure: 5, social: 6, controlled: false, police: 0, inAlliance: false, resources: ['wheat'], population: 5000000 },
+            'it': { name: 'Италия', flag: '🇮🇹', income: 120, military: 9, infrastructure: 8, social: 9, controlled: false, police: 0, inAlliance: false, resources: ['wheat'], population: 60000000 },
+            'kz': { name: 'Казахстан', flag: '🇰🇿', income: 70, military: 6, infrastructure: 5, social: 4, controlled: false, police: 0, inAlliance: false, resources: ['oil'], population: 19000000 },
+            'ru': { name: 'Россия', flag: '🇷🇺', income: 180, military: 18, infrastructure: 12, social: 6, controlled: false, police: 0, inAlliance: false, resources: ['oil'], population: 145000000 }
         };
 
         let playerCountryCode = '';
@@ -313,7 +330,7 @@
             military: 0,
             infrastructure: 0,
             social: 0,
-            money: 500,
+            money: 200, // Стартовый бюджет 200
             oil: 0,
             wheat: 0
         };
@@ -324,6 +341,7 @@
             isFormed: false
         };
         const newsFeed = [];
+        const SPY_COST = 9000;
 
         const countrySelectionEl = document.getElementById('country-selection');
         const countryListEl = document.getElementById('country-list');
@@ -345,6 +363,7 @@
         const proposeAllianceBtn = document.getElementById('propose-alliance-btn');
         const marketBtn = document.getElementById('market-btn');
         const newsBtn = document.getElementById('news-btn');
+        const spyCountryBtn = document.getElementById('spy-country-btn');
 
         const allianceOverlay = document.getElementById('alliance-overlay');
         const alliancePopup = document.getElementById('alliance-popup');
@@ -374,6 +393,13 @@
         const closeNewsPopupBtn = document.getElementById('close-news-popup');
         const newsFeedEl = document.getElementById('news-feed');
 
+        const spyOverlay = document.getElementById('spy-overlay');
+        const spyPopup = document.getElementById('spy-popup');
+        const closeSpyPopupBtn = document.getElementById('close-spy-popup');
+        const spyCountryList = document.getElementById('spy-country-list');
+        const spyInfoEl = document.getElementById('spy-info');
+
+
         let selectedAllianceFlag = '';
         let intervalId;
 
@@ -386,7 +412,7 @@
                 playerStats.military = countries[playerCountryCode].military;
                 playerStats.infrastructure = countries[playerCountryCode].infrastructure;
                 playerStats.social = countries[playerCountryCode].social;
-                playerStats.money = 5000;
+                // playerStats.money: 200 уже установлено
                 playerStats.oil = 0;
                 playerStats.wheat = 0;
 
@@ -455,6 +481,16 @@
         newsBtn.addEventListener('click', showNewsPopup);
         closeNewsPopupBtn.addEventListener('click', hideNewsPopup);
         newsOverlay.addEventListener('click', hideNewsPopup);
+
+        spyCountryBtn.addEventListener('click', showSpyPopup);
+        closeSpyPopupBtn.addEventListener('click', hideSpyPopup);
+        spyOverlay.addEventListener('click', hideSpyPopup);
+        spyCountryList.addEventListener('click', (e) => {
+            if (e.target.tagName === 'BUTTON') {
+                const countryCode = e.target.dataset.country;
+                spyOnCountry(countryCode);
+            }
+        });
         
         function gameLoop() {
             let totalIncome = playerStats.income;
@@ -800,6 +836,61 @@
 
         function renderNews() {
             newsFeedEl.innerHTML = newsFeed.map(item => `<p>${item}</p>`).join('');
+        }
+
+        // Функции для шпионажа
+        function showSpyPopup() {
+            spyOverlay.style.display = 'block';
+            spyPopup.style.display = 'block';
+            spyInfoEl.style.display = 'none'; // Скрываем информацию, пока страна не выбрана
+            updateSpyCountryList();
+        }
+
+        function hideSpyPopup() {
+            spyOverlay.style.display = 'none';
+            spyPopup.style.display = 'none';
+            spyInfoEl.style.display = 'none';
+        }
+
+        function updateSpyCountryList() {
+            spyCountryList.innerHTML = '';
+            const availableCountries = Object.keys(countries).filter(code => code !== playerCountryCode);
+            availableCountries.forEach(countryCode => {
+                const country = countries[countryCode];
+                const button = document.createElement('button');
+                button.dataset.country = countryCode;
+                button.textContent = country.flag + ' ' + country.name;
+                spyCountryList.appendChild(button);
+            });
+        }
+
+        function spyOnCountry(countryCode) {
+            if (playerStats.money < SPY_COST) {
+                addMessage(`Недостаточно денег для шпионажа. Нужно ${SPY_COST}💰.`);
+                return;
+            }
+
+            playerStats.money -= SPY_COST;
+            updateStatsDisplay();
+            addMessage(`Ваши шпионы отправлены в ${countries[countryCode].name}.`);
+            addNews(`Игрок провел шпионскую операцию в ${countries[countryCode].name}.`);
+
+            const targetCountry = countries[countryCode];
+            const playerPower = playerStats.military + Math.random() * 10;
+            const targetPower = targetCountry.military + Math.random() * 10;
+            const winChance = ((playerPower / (playerPower + targetPower)) * 0.7 * 100).toFixed(2);
+
+            spyInfoEl.style.display = 'block';
+            spyInfoEl.innerHTML = `
+                <h4>Отчет по ${targetCountry.flag} ${targetCountry.name}</h4>
+                <p><strong>Планы:</strong> У страны нет явных планов, но она активно развивается.</p>
+                <p><strong>Население:</strong> ${targetCountry.population.toLocaleString()} человек</p>
+                <p><strong>Доход:</strong> ${targetCountry.income} 💰</p>
+                <p><strong>Военная сила:</strong> ${targetCountry.military} 💂</p>
+                <p><strong>Инфраструктура:</strong> ${targetCountry.infrastructure} 🏭</p>
+                <p><strong>Социальная сфера:</strong> ${targetCountry.social} 🛳️</p>
+                <p><strong>Шанс успешного захвата:</strong> примерно ${winChance}%</p>
+            `;
         }
     </script>
 </body>
