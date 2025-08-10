@@ -386,7 +386,7 @@
                 playerStats.military = countries[playerCountryCode].military;
                 playerStats.infrastructure = countries[playerCountryCode].infrastructure;
                 playerStats.social = countries[playerCountryCode].social;
-                playerStats.money = 5000; // Увеличен стартовый капитал
+                playerStats.money = 5000;
                 playerStats.oil = 0;
                 playerStats.wheat = 0;
 
@@ -455,7 +455,7 @@
         newsBtn.addEventListener('click', showNewsPopup);
         closeNewsPopupBtn.addEventListener('click', hideNewsPopup);
         newsOverlay.addEventListener('click', hideNewsPopup);
-                function gameLoop() {
+            function gameLoop() {
             let totalIncome = playerStats.income;
             controlledCountries.forEach(countryCode => {
                 totalIncome += countries[countryCode].income;
