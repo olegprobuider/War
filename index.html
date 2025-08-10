@@ -359,7 +359,9 @@
             // Доход от альянса (10% от дохода всех участников)
             if (alliance.isFormed) {
                 alliance.members.forEach(memberCode => {
-                    totalIncome += countries[memberCode].income * 0.1;
+                    if (memberCode !== playerCountryCode) {
+                        totalIncome += countries[memberCode].income * 0.1;
+                    }
                 });
             }
 
@@ -453,32 +455,5 @@
                 return;
             }
 
-            const targetCode = availableCountries[Math.floor(Math.random() * availableCountries.length)];
-            const targetCountry = countries[targetCode];
-
-            addMessage(`Вы напали на ${targetCountry.name}!`);
-
-            const playerPower = playerStats.military + Math.random() * 10;
-            const targetPower = targetCountry.military + Math.random() * 10;
-
-            const winChance = (playerPower / (playerPower + targetPower)) * 0.7;
-
-            if (Math.random() < winChance) {
-                addMessage(`Победа! Вы захватили ${targetCountry.name}.`);
-                countries[targetCode].controlled = true;
-                countries[targetCode].inAlliance = true;
-                controlledCountries.push(targetCode);
-            } else {
-                addMessage(`Поражение! Ваши войска были отбиты ${targetCountry.name}.`);
-            }
-            updateStatsDisplay();
-        }
-
-        function checkRebellion() {
-            controlledCountries.forEach((countryCode, index) => {
-                const country = countries[countryCode];
-                const rebellionChance = Math.max(0.0, 0.8 - country.police * 0.05);
-
-                if (Math.random() < rebellionChance) {
-                    addMessage(`Бунт в ${country.name}!`);
-     
+            const targetCode
+    
