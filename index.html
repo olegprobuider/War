@@ -1,444 +1,469 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="ru">
 <head>
-    <title>Стратегия: Карта Мира</title>
-    <meta charset="UTF-8">
-    <style>
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background-color: #f0f4f8; 
-            color: #333;
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            justify-content: center;
-        }
-        #game-container {
-            width: 100%;
-            max-width: 1000px;
-            background-color: #ffffff;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-            padding: 25px;
-            box-sizing: border-box;
-        }
-        h1 { 
-            text-align: center; 
-            color: #2c3e50; 
-            margin-bottom: 20px;
-        }
-        h2, h3 { 
-            color: #34495e; 
-            border-bottom: 2px solid #ecf0f1; 
-            padding-bottom: 5px;
-        }
-        #map-and-ui {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-        #game-map {
-            font-size: 14px;
-            line-height: 1.2;
-            white-space: pre;
-            padding: 15px;
-            background-color: #eaf2f8;
-            border-radius: 8px;
-            overflow: auto;
-            border: 1px solid #dcdfe4;
-            flex-grow: 1;
-        }
-        #ui-panel {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-        }
-        .ui-box {
-            background-color: #f9fbfd;
-            padding: 20px;
-            border-radius: 8px;
-            border: 1px solid #dcdfe4;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        }
-        .ui-box p, .ui-box button {
-            margin: 8px 0;
-        }
-        button {
-            width: 100%;
-            padding: 10px;
-            border: none;
-            border-radius: 5px;
-            background-color: #3498db;
-            color: white;
-            font-size: 16px;
-            cursor: pointer;
-            transition: background-color 0.2s ease;
-        }
-        button:hover {
-            background-color: #2980b9;
-        }
-        button:disabled {
-            background-color: #95a5a6;
-            cursor: not-allowed;
-        }
-        .country-flag-select {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-        .country-flag-select button {
-            width: auto;
-            padding: 5px 10px;
-            background-color: #ecf0f1;
-            color: #34495e;
-            font-size: 20px;
-        }
-        .country-flag-select button.selected {
-            background-color: #2ecc71;
-            color: white;
-        }
-        .attack-target {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            margin-bottom: 5px;
-        }
-        .modal {
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.5);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        .modal-content {
-            background-color: white;
-            padding: 30px;
-            border-radius: 10px;
-            text-align: center;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-            max-width: 500px;
-        }
-        .hidden { display: none !important; }
-        
-        #notifications {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            width: 300px;
-            max-height: 200px;
-            overflow-y: auto;
-            z-index: 1001;
-            display: flex;
-            flex-direction: column-reverse;
-        }
-        .notification {
-            background-color: #333;
-            color: white;
-            padding: 10px 15px;
-            border-radius: 5px;
-            margin-top: 10px;
-            animation: fadeInOut 5s forwards;
-        }
-        @keyframes fadeInOut {
-            0% { opacity: 0; transform: translateY(20px); }
-            10% { opacity: 1; transform: translateY(0); }
-            90% { opacity: 1; transform: translateY(0); }
-            100% { opacity: 0; transform: translateY(20px); }
-        }
-    </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Emoji Geo-Strategy (one-file)</title>
+<style>
+  :root{
+    --bg:#0f1724; --panel:#0b1320; --muted:#94a3b8; --accent:#60a5fa;
+    --card:#071129; --glass: rgba(255,255,255,0.03);
+  }
+  body{
+    margin:0; font-family: Inter, system-ui, sans-serif; background:linear-gradient(180deg,#021025,#03182b);
+    color:#e6eef8;
+    display:flex; gap:12px; height:100vh; padding:12px; box-sizing:border-box;
+  }
+  .left{width:640px; background:var(--card); border-radius:12px; padding:12px; box-shadow:0 8px 30px rgba(0,0,0,0.6)}
+  .right{flex:1; background:var(--panel); border-radius:12px; padding:12px; display:flex; flex-direction:column; gap:12px}
+  h1{margin:0 0 6px 0; font-size:18px}
+  .map{display:grid; grid-template-columns: repeat(16, 1fr); gap:6px; user-select:none}
+  .tile{height:36px; display:flex; align-items:center; justify-content:center; font-size:18px; border-radius:6px; background:var(--glass); cursor:pointer}
+  .tile.city{background:linear-gradient(90deg,#10466a,#0b2b46); box-shadow: inset 0 -4px 8px rgba(0,0,0,0.4)}
+  .tile.enemy{background:linear-gradient(90deg,#3b0b0b,#1e0505)}
+  .controls{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
+  .btn{background:linear-gradient(180deg,#15384f,#0f2a38); padding:8px 10px; border-radius:8px; cursor:pointer; border:1px solid rgba(255,255,255,0.04)}
+  .btn.secondary{background:linear-gradient(180deg,#2c2f3a,#121214); color:var(--muted)}
+  .panel{background:rgba(255,255,255,0.02); padding:10px; border-radius:10px}
+  .country-list{display:flex; gap:6px; flex-wrap:wrap}
+  .flag{padding:6px 8px; border-radius:8px; cursor:pointer; background:rgba(255,255,255,0.02)}
+  .flag.selected{outline:2px solid #60a5fa}
+  .stats{display:grid; grid-template-columns:repeat(2,1fr); gap:8px}
+  .stat{background:rgba(255,255,255,0.02); padding:8px; border-radius:8px}
+  .big{font-size:20px; font-weight:700}
+  .log{background:rgba(0,0,0,0.3); padding:8px; border-radius:8px; max-height:180px; overflow:auto; font-size:13px}
+  .row{display:flex; gap:8px; align-items:center}
+  .upgrade{display:flex; gap:8px; align-items:center; justify-content:space-between; padding:8px; border-radius:8px; background:rgba(255,255,255,0.01)}
+  footer{font-size:12px; color:var(--muted)}
+  .grid-row{display:flex; gap:6px}
+  .selectedInfo{border:1px dashed rgba(255,255,255,0.04); padding:8px; border-radius:8px}
+  .muted{color:var(--muted); font-size:13px}
+  input[type=range]{width:100%}
+</style>
 </head>
 <body>
-
-    <div id="game-container">
-        <h1>Стратегическая игра</h1>
-        
-        <div id="select-country-modal" class="modal">
-            <div class="modal-content">
-                <h2>Выберите вашу страну</h2>
-                <div class="country-flag-select" id="country-select-buttons">
-                    </div>
-            </div>
-        </div>
-
-        <div id="map-and-ui" class="hidden">
-            <div id="game-map">
-                </div>
-
-            <div id="ui-panel">
-                <div id="country-info" class="ui-box">
-                    <h2>Ваша страна: <span id="player-country"></span></h2>
-                    <p>Деньги: <span id="player-money"></span>💰</p>
-                    <p>Военная мощь: <span id="player-military"></span>💂</p>
-                    <p>Инфраструктура: <span id="player-infrastructure"></span>🏭</p>
-                    <p>Доход/ход: <span id="player-income"></span>💰</p>
-                </div>
-
-                <div id="upgrade-buttons" class="ui-box">
-                    <h3>Прокачать</h3>
-                    <button id="upgrade-infra-btn">Инфраструктура (+1) - 100💰 🏭</button>
-                    <button id="upgrade-military-btn">Войска (+5) - 150💰 💂</button>
-                    <p>Для захваченных стран:</p>
-                    <button id="upgrade-police-btn" disabled>Полиция (+1) - 50💰 👮</button>
-                </div>
-
-                <div id="attack-panel" class="ui-box">
-                    <h3>Напасть на страну</h3>
-                    <div id="attack-targets-list">
-                        </div>
-                </div>
-            </div>
-        </div>
+  <div class="left">
+    <h1>🌍 Emoji Geo-Strategy — карта</h1>
+    <div class="panel" style="margin-bottom:8px">
+      <div class="controls">
+        <div class="btn" id="newGameBtn">🆕 Новая игра</div>
+        <div class="btn secondary" id="saveBtn">💾 Сохранить</div>
+        <div class="btn secondary" id="loadBtn">📂 Загрузить</div>
+        <div style="margin-left:auto" class="muted">Tick = <span id="tickIntervalLabel">5s</span></div>
+      </div>
     </div>
-    
-    <div id="notifications"></div>
 
-    <script>
-        const countriesData = {
-            '🇨🇳': { name: 'Китай', military: 25, infrastructure: 5, income: 15 },
-            '🇬🇧': { name: 'Британия', military: 15, infrastructure: 8, income: 10 },
-            '🇺🇸': { name: 'США', military: 30, infrastructure: 10, income: 20 },
-            '🇺🇦': { name: 'Украина', military: 10, infrastructure: 7, income: 8 },
-            '🇷🇺': { name: 'Россия', military: 20, infrastructure: 6, income: 12 },
-            '🇵🇱': { name: 'Польша', military: 8, infrastructure: 4, income: 6 },
-            '🇪🇸': { name: 'Испания', military: 9, infrastructure: 5, income: 7 }, // Исправил флаг
-            '🇮🇹': { name: 'Италия', military: 7, infrastructure: 6, income: 7 },
-            '🇰🇿': { name: 'Казахстан', military: 6, infrastructure: 3, income: 5 },
-            '🇮🇪': { name: 'Ирландия', military: 5, infrastructure: 9, income: 6 },
-        };
+    <div style="display:flex; gap:8px; margin-bottom:8px">
+      <div style="flex:1" class="panel">
+        <div class="muted">Выбери страну</div>
+        <div class="country-list" id="countryList"></div>
+      </div>
+      <div style="width:220px" class="panel">
+        <div class="muted">Игрок</div>
+        <div class="big" id="playerName">Игрок</div>
+        <div class="muted">Баланс</div>
+        <div class="big" id="playerMoney">0</div>
+      </div>
+    </div>
 
-        let mapLayout = [
-            '🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦',
-            '🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦',
-            '🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦',
-            '🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦',
-            '🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦',
-            '🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦',
-            '🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦',
-            '🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦',
-            '🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦',
-            '🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦',
-        ];
-        
-        // Позиции стран на карте
-        const countryPositions = {
-            '🇺🇦': { row: 3, col: 7 }, '🇷🇺': { row: 4, col: 13 }, '🇨🇳': { row: 6, col: 15 },
-            '🇬🇧': { row: 2, col: 5 }, '🇺🇸': { row: 4, col: 2 }, '🇵🇱': { row: 3, col: 6 },
-            '🇪🇸': { row: 4, col: 5 }, '🇮🇹': { row: 4, col: 8 }, '🇰🇿': { row: 5, col: 12 },
-            '🇮🇪': { row: 3, col: 4 }
-        };
-        
-        // Заполняем карту флагами
-        for(const flag in countryPositions) {
-            const pos = countryPositions[flag];
-            const row = mapLayout[pos.row].split('');
-            row[pos.col] = flag;
-            mapLayout[pos.row] = row.join('');
-        }
+    <div class="map" id="map"></div>
+    <div style="margin-top:8px" class="muted">Легенда: 🟩 нейтрал, 🟦 вода, 🇨🇳/... страны. Нажми на клетку для подробностей.</div>
+  </div>
 
-        let gameState = {
-            player: {
-                flag: '',
-                name: '',
-                money: 500,
-                military: 0,
-                infrastructure: 0,
-                conquered: new Map(), // Используем Map для удобства
-            },
-            countries: {}
-        };
-        
-        // Элементы DOM
-        const gameMapEl = document.getElementById('game-map');
-        const playerCountryEl = document.getElementById('player-country');
-        const playerMoneyEl = document.getElementById('player-money');
-        const playerMilitaryEl = document.getElementById('player-military');
-        const playerInfrastructureEl = document.getElementById('player-infrastructure');
-        const playerIncomeEl = document.getElementById('player-income');
-        const upgradeInfraBtn = document.getElementById('upgrade-infra-btn');
-        const upgradeMilitaryBtn = document.getElementById('upgrade-military-btn');
-        const upgradePoliceBtn = document.getElementById('upgrade-police-btn');
-        const attackTargetsList = document.getElementById('attack-targets-list');
-        const selectCountryModal = document.getElementById('select-country-modal');
-        const gameUI = document.getElementById('map-and-ui');
-        const notificationsEl = document.getElementById('notifications');
+  <div class="right">
+    <div class="panel">
+      <h1>Информация о выбранной стране</h1>
+      <div id="selectedInfo" class="selectedInfo muted">Выберите страну или клетку карты.</div>
+    </div>
 
-        function showNotification(message) {
-            const notification = document.createElement('div');
-            notification.className = 'notification';
-            notification.innerText = message;
-            notificationsEl.appendChild(notification);
-            setTimeout(() => {
-                notification.remove();
-            }, 5000);
-        }
+    <div class="panel">
+      <h1>Апгрейды и действия</h1>
+      <div id="actions">
+        <div class="muted">Ни одна страна не выбрана.</div>
+      </div>
+    </div>
 
-        function updateUI() {
-            playerCountryEl.innerText = `${gameState.player.flag} ${gameState.player.name}`;
-            playerMoneyEl.innerText = gameState.player.money;
-            playerMilitaryEl.innerText = gameState.player.military;
-            playerInfrastructureEl.innerText = gameState.player.infrastructure;
-            
-            const totalIncome = gameState.player.infrastructure * 5 + 
-                                Array.from(gameState.player.conquered.values()).reduce((sum, c) => sum + (c.police * 3), 0);
-            playerIncomeEl.innerText = totalIncome;
+    <div class="panel">
+      <h1>Лог</h1>
+      <div class="log" id="log"></div>
+    </div>
 
-            upgradeInfraBtn.disabled = gameState.player.money < 100;
-            upgradeMilitaryBtn.disabled = gameState.player.money < 150;
-            upgradePoliceBtn.disabled = gameState.player.money < 50 || gameState.player.conquered.size === 0;
-        }
+    <div style="display:flex; gap:8px;">
+      <div class="panel" style="flex:1">
+        <div class="muted">Пассивный доход / ход</div>
+        <div class="big" id="incomePerTick">0</div>
+      </div>
+      <div class="panel" style="width:220px">
+        <div class="muted">Время (tick)</div>
+        <div class="big" id="tickCount">0</div>
+      </div>
+    </div>
 
-        function drawMap() {
-            let currentMap = [...mapLayout];
-            for (const [flag, country] of gameState.player.conquered) {
-                const pos = countryPositions[flag];
-                const row = currentMap[pos.row].split('');
-                row[pos.col] = gameState.player.flag;
-                currentMap[pos.row] = row.join('');
-            }
-            gameMapEl.innerText = currentMap.join('\n');
-        }
+    <footer>Сделано одним html. Редактируй значения в коде для баланса.</footer>
+  </div>
 
-        function createCountrySelection() {
-            const countrySelectButtons = document.getElementById('country-select-buttons');
-            for (const flag in countriesData) {
-                const button = document.createElement('button');
-                button.innerText = flag;
-                button.onclick = () => selectCountry(flag);
-                countrySelectButtons.appendChild(button);
-            }
-        }
+<script>
+/*
+  Emoji Geo-Strategy
+  Single-file prototype.
+  Основные сущности: страны, игрок, деньги, апгрейды, атаки, захват, пассивный доход.
+*/
 
-        function selectCountry(flag) {
-            const country = countriesData[flag];
-            gameState.player.flag = flag;
-            gameState.player.name = country.name;
-            gameState.player.military = country.military;
-            gameState.player.infrastructure = country.infrastructure;
-            
-            for (const otherFlag in countriesData) {
-                if (otherFlag !== flag) {
-                    gameState.countries[otherFlag] = {
-                        ...countriesData[otherFlag],
-                        flag: otherFlag,
-                        isConquered: false,
-                        police: 0,
-                    };
-                }
-            }
+// *** Настройки баланса (можешь менять) ***
+const CONFIG = {
+  gridW: 16,
+  gridH: 10,
+  startMoney: 500,
+  tickSeconds: 5,
+  baseIncome: 5, // доход от своей страны 1 уровня инфраструктуры
+  infrastructureIncomeMultiplier: 10, // + per level
+  infrastructureCostBase: 100,
+  militaryCostBase: 80,
+  unitCostBase: {ship:120, plane:200, train:90},
+  policeCostBase: 150,
+  revoltBaseChance: 0.5, // 50% chance попытки бунта для захваченной страны при событии
+  policeEffectPerLevel: 0.15, // уменьшает шанс бунта (15% per police level)
+  attackIntervalSeconds: 0, // not used; attacks are immediate
+  captureTaxPercent: 0.2 // percent of captured country's income goes to owner (passive)
+};
 
-            selectCountryModal.classList.add('hidden');
-            gameUI.classList.remove('hidden');
-            startGame();
-        }
-        
-        function populateAttackTargets() {
-            attackTargetsList.innerHTML = '';
-            for (const flag in gameState.countries) {
-                const country = gameState.countries[flag];
-                if (!country.isConquered) {
-                    const div = document.createElement('div');
-                    div.className = 'attack-target';
-                    div.innerHTML = `
-                        <span>${flag} ${country.name} - 💂 ${country.military}</span>
-                        <button onclick="attackCountry('${flag}')">Напасть</button>
-                    `;
-                    attackTargetsList.appendChild(div);
-                }
-            }
-        }
-        
-        function attackCountry(targetFlag) {
-            const targetCountry = gameState.countries[targetFlag];
-            if (gameState.player.military > targetCountry.military) {
-                showNotification(`Вы успешно захватили ${targetCountry.name}!`);
-                targetCountry.isConquered = true;
-                targetCountry.police = 1;
-                gameState.player.conquered.set(targetFlag, targetCountry);
-                
-                populateAttackTargets();
-                updateUI();
-                drawMap();
-            } else {
-                showNotification(`Нападение на ${targetCountry.name} провалилось. Вы потеряли 50 солдат.`);
-                gameState.player.military = Math.max(0, gameState.player.military - 50);
-                updateUI();
-            }
-        }
-        
-        function checkRebellion() {
-            // Используем Array.from() для итерации по Map
-            Array.from(gameState.player.conquered.values()).forEach(country => {
-                const rebellionChance = 0.5 - (country.police * 0.1);
-                if (Math.random() < rebellionChance) {
-                    if (Math.random() > 0.5) { // 50/50 шанс успешного подавления
-                        showNotification(`Восстание в ${country.name} было подавлено.`);
-                    } else {
-                        showNotification(`В ${country.name} вспыхнуло восстание! Вы потеряли контроль.`);
-                        
-                        country.isConquered = false;
-                        country.police = 0;
-                        gameState.player.conquered.delete(country.flag);
-                        
-                        populateAttackTargets();
-                        drawMap();
-                    }
-                }
-            });
-        }
-        
-        function gameLoop() {
-            gameState.player.money += gameState.player.infrastructure * 5;
-            Array.from(gameState.player.conquered.values()).forEach(country => {
-                gameState.player.money += country.police * 3;
-            });
-            
-            checkRebellion();
-            updateUI();
-        }
+// *** Список стран (emoji, name) ***
+const COUNTRY_OPTIONS = [
+  {code:"CN", flag:"🇨🇳", name:"Китай"},
+  {code:"FR", flag:"🇫🇷", name:"Франция"},
+  {code:"GB", flag:"🇬🇧", name:"Великобритания"},
+  {code:"PL", flag:"🇵🇱", name:"Польша"},
+  {code:"US", flag:"🇺🇸", name:"США"},
+  {code:"UA", flag:"🇺🇦", name:"Украина"},
+  {code:"AE", flag:"🇦🇪", name:"ОАЭ"},
+  {code:"AI", flag:"🇦🇮", name:"Ангилья"},
+  {code:"IE", flag:"🇮🇪", name:"Ирландия"},
+  {code:"IT", flag:"🇮🇹", name:"Италия"},
+  {code:"KZ", flag:"🇰🇿", name:"Казахстан"},
+  {code:"RU", flag:"🇷🇺", name:"Россия"}
+];
 
-        // События кнопок
-        upgradeInfraBtn.addEventListener('click', () => {
-            if (gameState.player.money >= 100) {
-                gameState.player.money -= 100;
-                gameState.player.infrastructure += 1;
-                updateUI();
-            }
-        });
+// *** Игровые структуры ***
+let state = {
+  grid: [], // tiles
+  countries: {}, // countryId -> data
+  player: {id:null, money:0, name:"Игрок", owned:[]},
+  tick: 0,
+  intervalId: null
+};
 
-        upgradeMilitaryBtn.addEventListener('click', () => {
-            if (gameState.player.money >= 150) {
-                gameState.player.money -= 150;
-                gameState.player.military += 5;
-                updateUI();
-            }
-        });
+// утилиты
+function rnd(a,b){ return Math.floor(Math.random()*(b-a+1))+a }
+function log(msg){ const l = document.getElementById('log'); const time = new Date().toLocaleTimeString(); l.innerHTML = `<div>(${time}) ${escapeHtml(msg)}</div>` + l.innerHTML; }
+function escapeHtml(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;"); }
 
-        upgradePoliceBtn.addEventListener('click', () => {
-            if (gameState.player.money >= 50 && gameState.player.conquered.size > 0) {
-                gameState.player.money -= 50;
-                gameState.player.conquered.forEach(c => c.police++);
-                showNotification(`Полиция во всех захваченных странах усилена! 👮`);
-                updateUI();
-            }
-        });
+// Инициализация карты: создаём gridW*gridH клеток, размещаем страны рандомно
+function initNewGame(){
+  state = {grid:[], countries:{}, player:{id:null,money:CONFIG.startMoney,name:"Игрок",owned:[]}, tick:0, intervalId:null};
+  // create tiles
+  const total = CONFIG.gridW * CONFIG.gridH;
+  for(let i=0;i<total;i++){
+    // немного воды
+    const isWater = Math.random() < 0.12;
+    state.grid.push({type: isWater ? 'sea' : 'land', country:null});
+  }
+  // place some countries on different land tiles
+  const landIndices = state.grid.map((t,i)=>({t,i})).filter(x=>x.t.type==='land').map(x=>x.i);
+  shuffleArray(landIndices);
+  const count = Math.min(COUNTRY_OPTIONS.length, Math.floor(landIndices.length/4));
+  for(let i=0;i<count;i++){
+    const pos = landIndices[i];
+    const cOpt = COUNTRY_OPTIONS[i];
+    const id = cOpt.code;
+    state.grid[pos].country = id;
+    // initial stats for country
+    state.countries[id] = {
+      id, flag:cOpt.flag, name:cOpt.name,
+      pos,
+      owner: null, // null = neutral, 'player' = player, or other player id (not used)
+      infra: rnd(1,2),
+      military: rnd(0,2),
+      units: {ship:0, plane:0, train:0},
+      police: 0,
+      baseIncome: rnd(5,20)
+    };
+  }
+  // place player ownership on one country (first)
+  const firstId = Object.keys(state.countries)[0];
+  if(firstId){
+    state.countries[firstId].owner = 'player';
+    state.player.id = 'player';
+    state.player.owned = [firstId];
+  }
+  saveToLocalStorage('autosave', state);
+  renderAll();
+  startTick();
+  log('Создана новая игра.');
+}
 
-        function startGame() {
-            drawMap();
-            populateAttackTargets();
-            setInterval(gameLoop, 1000); 
-        }
-        
-        document.addEventListener('DOMContentLoaded', createCountrySelection);
-    </script>
-</body>
-    </html>
-    
+// shuffle helper
+function shuffleArray(arr){ for(let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]] } }
+
+// rendering
+function renderAll(){
+  renderCountryList();
+  renderMap();
+  renderPlayerInfo();
+  renderSidebar();
+  renderIncome();
+}
+function renderMap(){
+  const mapDiv = document.getElementById('map');
+  mapDiv.innerHTML = '';
+  for(let y=0;y<CONFIG.gridH;y++){
+    for(let x=0;x<CONFIG.gridW;x++){
+      const idx = y*CONFIG.gridW + x;
+      const tile = state.grid[idx];
+      const el = document.createElement('div');
+      el.className = 'tile';
+      el.dataset.idx = idx;
+      if(tile.type === 'sea'){ el.innerText = '🟦'; el.classList.add('sea') }
+      else if(tile.country){
+        const c = state.countries[tile.country];
+        el.innerText = c.flag;
+        el.classList.add('city');
+        if(c.owner && c.owner !== 'player') el.classList.add('enemy');
+      } else {
+        el.innerText = '🟩';
+      }
+      el.onclick = ()=>onTileClick(idx);
+      mapDiv.appendChild(el);
+    }
+  }
+}
+function renderCountryList(){
+  const cl = document.getElementById('countryList'); cl.innerHTML='';
+  for(const id in state.countries){
+    const c = state.countries[id];
+    const el = document.createElement('div');
+    el.className = 'flag' + (c.owner==='player' ? ' selected' : '');
+    el.innerHTML = `${c.flag} <span class="muted" style="font-size:12px"> ${c.name}</span>`;
+    el.onclick = ()=>selectCountry(id);
+    cl.appendChild(el);
+  }
+}
+function renderPlayerInfo(){
+  document.getElementById('playerName').innerText = state.player.name;
+  document.getElementById('playerMoney').innerText = formatMoney(state.player.money);
+}
+function renderSidebar(){
+  const info = document.getElementById('selectedInfo');
+  if(state._selectedCountry){
+    const c = state.countries[state._selectedCountry];
+    info.classList.remove('muted');
+    info.innerHTML = `<div style="display:flex;align-items:center;gap:8px">
+      <div style="font-size:28px">${c.flag}</div>
+      <div>
+        <div style="font-weight:700">${c.name} ${c.owner==='player' ? '(ваша)' : c.owner ? '(враждебна)' : '(нейтральна)'}</div>
+        <div class="muted">Инфра: ${c.infra} | Военные: ${c.military} | 👮 полиция: ${c.police}</div>
+        <div class="muted">Юниты: 🛳️${c.units.ship} ✈️${c.units.plane} 🚂${c.units.train}</div>
+        <div class="muted">Базовый доход: ${c.baseIncome} </div>
+      </div>
+    </div>`;
+    renderActionsFor(c);
+  } else {
+    info.classList.add('muted');
+    info.innerHTML = 'Выберите страну на карте или в списке слева.';
+    document.getElementById('actions').innerHTML = '<div class="muted">Ни одна страна не выбрана.</div>';
+  }
+}
+function renderActionsFor(country){
+  const a = document.getElementById('actions');
+  a.innerHTML = '';
+  const owner = country.owner;
+  // show stats & upgrade buttons
+  const upgradePanel = document.createElement('div');
+  upgradePanel.innerHTML = `
+    <div class="row" style="margin-bottom:6px">
+      <div style="flex:1">
+        <div class="muted">Инфраструктура 🏭 (увеличивает доход)</div>
+        <div class="upgrade">
+          <div>Уровень: ${country.infra}</div>
+          <div>Стоимость: ${priceForInfra(country.infra)}</div>
+        </div>
+      </div>
+      <div style="width:140px; display:flex; flex-direction:column; gap:6px">
+        <button class="btn" id="buyInfra">Купить</button>
+      </div>
+    </div>
+    <div class="row" style="margin-bottom:6px">
+      <div style="flex:1">
+        <div class="muted">Военные 💂 (увеличивает силу атаки)</div>
+        <div class="upgrade">
+          <div>Уровень: ${country.military}</div>
+          <div>Стоимость: ${priceForMilitary(country.military)}</div>
+        </div>
+      </div>
+      <div style="width:140px; display:flex; flex-direction:column; gap:6px">
+        <button class="btn" id="buyMilitary">Набрать</button>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:6px">
+      <div style="flex:1">
+        <div class="muted">Юниты</div>
+        <div class="upgrade">🛳️ ${country.units.ship} | ✈️ ${country.units.plane} | 🚂 ${country.units.train}</div>
+      </div>
+      <div style="width:140px;display:flex;flex-direction:column;gap:6px">
+        <button class="btn" id="buyShip">Купить 🛳️ (${CONFIG.unitCostBase.ship})</button>
+        <button class="btn" id="buyPlane">Купить ✈️ (${CONFIG.unitCostBase.plane})</button>
+        <button class="btn" id="buyTrain">Купить 🚂 (${CONFIG.unitCostBase.train})</button>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:6px">
+      <div style="flex:1">
+        <div class="muted">Полиция 👮 (уменьшает шанс бунта)</div>
+        <div class="upgrade">Уровень: ${country.police} | Стоимость: ${priceForPolice(country.police)}</div>
+      </div>
+      <div style="width:140px;display:flex;flex-direction:column;gap:6px">
+        <button class="btn" id="buyPolice">Нанять 👮</button>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn" id="attackBtn">⚔️ Атаковать</button>
+      <button class="btn secondary" id="inspectBtn">🔎 Смотреть детали</button>
+    </div>
+  `;
+  a.appendChild(upgradePanel);
+
+  // handlers
+  document.getElementById('buyInfra').onclick = ()=>{
+    if(country.owner !== 'player'){ alert('Апгрейд доступен только для ваших стран.'); return; }
+    const cost = priceForInfra(country.infra);
+    if(state.player.money < cost){ alert('Не хватает денег'); return; }
+    state.player.money -= cost; country.infra += 1;
+    log(`Вы прокачали инфраструктуру в ${country.name} (уровень теперь ${country.infra}).`);
+    saveToLocalStorage('autosave', state); renderAll();
+  };
+  document.getElementById('buyMilitary').onclick = ()=>{
+    if(country.owner !== 'player'){ alert('Только для ваших стран.'); return; }
+    const cost = priceForMilitary(country.military);
+    if(state.player.money < cost){ alert('Не хватает денег'); return; }
+    state.player.money -= cost; country.military += 1;
+    log(`Вы увеличили военную силу ${country.name} до ${country.military}.`);
+    saveToLocalStorage('autosave', state); renderAll();
+  };
+  document.getElementById('buyShip').onclick = ()=>buyUnit(country,'ship');
+  document.getElementById('buyPlane').onclick = ()=>buyUnit(country,'plane');
+  document.getElementById('buyTrain').onclick = ()=>buyUnit(country,'train');
+  document.getElementById('buyPolice').onclick = ()=>{
+    if(country.owner !== 'player'){ alert('Только для ваших стран.'); return; }
+    const cost = priceForPolice(country.police);
+    if(state.player.money < cost){ alert('Не хватает денег'); return; }
+    state.player.money -= cost; country.police += 1;
+    log(`Вы повысили полицию в ${country.name} до уровня ${country.police}.`);
+    saveToLocalStorage('autosave', state); renderAll();
+  };
+  document.getElementById('attackBtn').onclick = ()=>onAttack(country);
+  document.getElementById('inspectBtn').onclick = ()=>alert(JSON.stringify(country,null,2));
+}
+
+function buyUnit(country, type){
+  if(country.owner !== 'player'){ alert('Только для ваших стран.'); return; }
+  const cost = CONFIG.unitCostBase[type];
+  if(state.player.money < cost){ alert('Не хватает денег'); return; }
+  state.player.money -= cost; country.units[type] += 1;
+  log(`Куплен ${type} в ${country.name}.`);
+  saveToLocalStorage('autosave', state); renderAll();
+}
+
+function onTileClick(idx){
+  const tile = state.grid[idx];
+  if(tile.country){
+    selectCountry(tile.country);
+  } else {
+    state._selectedCountry = null;
+    renderSidebar();
+  }
+}
+
+function selectCountry(id){
+  state._selectedCountry = id;
+  renderSidebar();
+}
+
+// price calc
+function priceForInfra(current){ return Math.round(CONFIG.infrastructureCostBase * Math.pow(1.5, current-1)); }
+function priceForMilitary(current){ return Math.round(CONFIG.militaryCostBase * Math.pow(1.6, current)); }
+function priceForPolice(current){ return Math.round(CONFIG.policeCostBase * Math.pow(1.8, current)); }
+
+// attack logic: атакуем выбранную страну (если атакуем из своей страны на соседнюю? для простоты: атака происходит от вашей выбранной страны на выбранную нейтраль/враждебную)
+// We'll prompt: choose attacker (one of player's countries) and target (selected country)
+function onAttack(target){
+  if(!state._selectedCountry) { alert('Выберите цель на карте.'); return; }
+  // choose an attacker from player's owned (simple: if target is not owned by player, let user pick)
+  if(target.owner === 'player'){ alert('Нельзя атаковать свою страну.'); return; }
+  const playerOwned = state.player.owned;
+  if(playerOwned.length===0){ alert('У вас нет своих стран для атаки.'); return; }
+  let attackerId = playerOwned[0]; // default first
+  if(playerOwned.length>1){
+    const pick = prompt('Выберите атакующую страну (введите индекс):\n' + playerOwned.map((id,i)=>`${i}: ${state.countries[id].flag} ${state.countries[id].name}`).join('\n'));
+    const p = parseInt(pick);
+    if(isNaN(p) || p<0 || p>=playerOwned.length){ alert('Некорректный выбор, используем первую страну.'); attackerId = playerOwned[0]; }
+    else attackerId = playerOwned[p];
+  }
+  const attacker = state.countries[attackerId];
+  const defender = target;
+
+  // compute strengths: base military + units weighted
+  const atkStrength = attacker.military * 10 + attacker.units.ship*6 + attacker.units.plane*12 + attacker.units.train*4 + rnd(0,10);
+  const defStrength = defender.military * 10 + defender.units.ship*6 + defender.units.plane*12 + defender.units.train*4 + rnd(0,10);
+
+  log(`Атака: ${attacker.name} (силы ${atkStrength}) -> ${defender.name} (силы ${defStrength})`);
+
+  // probabilistic outcome: P(win) = atk/(atk+def)
+  const prob = atkStrength / Math.max(1, atkStrength + defStrength);
+  const roll = Math.random();
+  if(roll < prob){
+    // success: capture
+    // costs: lose some units / money?
+    defender.owner = 'player';
+    state.player.owned.push(defender.id);
+    // attacker loses some military and units
+    const lostMil = Math.max(0, Math.floor(attacker.military * (0.2 + Math.random()*0.3)));
+    attacker.military = Math.max(0, attacker.military - lostMil);
+    // reduce some defender units as well
+    defender.military = Math.max(0, Math.floor(defender.military * 0.4));
+    // transfer partial income: passive income will include captured country's baseIncome
+    log(`Успешно! ${defender.name} захвачена. Потеря войск: ${lostMil}.`);
+    // small immediate loot
+    const loot = Math.round(defender.baseIncome * 3);
+    state.player.money += loot;
+    log(`Вы получили мгновенный налог/добычу: ${loot}.`);
+    saveToLocalStorage('autosave', state); renderAll();
+  } else {
+    // failed: attacker loses more
+    const lostMil = Math.max(1, Math.floor(attacker.military * (0.3 + Math.random()*0.4)));
+    attacker.military = Math.max(0, attacker.military - lostMil);
+    // maybe defender also loses some
+    defender.military = Math.max(0, Math.floor(defender.military * (0.1 + Math.random()*0.2)));
+    // cost of war
+    const warCost = Math.round(atkStrength*0.5);
+    state.player.money = Math.max(0, state.player.money - warCost);
+    log(`Атака провалена. Вы потеряли ${lostMil} военных и ${warCost} денег.`);
+    saveToLocalStorage('autosave', state); renderAll();
+  }
+}
+
+// income calc per tick
+function computeIncomePerTick(){
+  let total = 0;
+  for(const id in state.countries){
+    const c = state.countries[id];
+    if(c.owner === 'player'){
+      total += CONFIG.baseIncome + c.infra * CONFIG.infrastructureIncomeMultiplier + c.baseIncome;
+      // captured countries contribute via their baseIncome too
+    }
+  }
+  return total;
+}
+
+function tick(){
+  state.tick++;
+  // passive income: sum over owned countries, plus a percent from captured ones (all owned considered captured if owner==='player')
+  let income=0;
+  state.player.owned =
