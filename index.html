@@ -35,9 +35,6 @@
             gap: 20px;
             margin-top: 20px;
         }
-        .text-map-container {
-            flex-shrink: 0;
-        }
         .visual-map-container {
             flex-grow: 1;
         }
@@ -217,6 +214,27 @@
         };
         const controlledCountries = [];
 
+        // Карта для отслеживания стран
+        const countryMap = "AAAAAAAAAAAAAAAAAAAA" + // 20 символов
+                         "AAABBCCCDDEEGGHHHHII" +
+                         "JKLMMNNOPQRSSTUVWXYY" +
+                         "ZZZabcdefghijkllmnoo" +
+                         "ppqqrrrsttuuuuvvwwxy" +
+                         "yyzz1234567890!@#$%^";
+
+        const countryMapSymbols = {
+            'cn': 'A', 'fr': 'B', 'gb': 'C', 'pl': 'D', 'us': 'E',
+            'ua': 'G', 'es': 'H', 'ie': 'I', 'it': 'J', 'kz': 'K', 'ru': 'L'
+        };
+
+        let visualMap = "🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦" +
+                        "🟦🟦🟩🟩🟩🟩🟩🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦" +
+                        "🟦🟦🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟦🟦🟦" +
+                        "🟦🟦🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩" +
+                        "🟦🟦🟦🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩" +
+                        "🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦" +
+                        "🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦";
+
         const countrySelectionEl = document.getElementById('country-selection');
         const gameScreenEl = document.getElementById('game-screen');
         const playerCountryFlagEl = document.getElementById('player-country-flag');
@@ -229,12 +247,14 @@
         const messagesEl = document.getElementById('messages');
         const controlledCountriesEl = document.getElementById('controlled-countries');
         const controlledCountriesListEl = document.getElementById('controlled-countries-list');
+        const visualMapEl = document.getElementById('visual-map');
         
         const upgradeInfrastructureBtn = document.getElementById('upgrade-infrastructure');
         const upgradeMilitaryBtn = document.getElementById('upgrade-military');
         const upgradeSocialBtn = document.getElementById('upgrade-social');
 
         const MAX_UPGRADE_LEVEL = 10;
+        const MAP_WIDTH = 19;
 
         document.getElementById('country-list').addEventListener('click', (e) => {
             if (e.target.tagName === 'BUTTON') {
@@ -250,6 +270,7 @@
                 
                 playerCountryFlagEl.textContent = countries[playerCountryCode].flag;
                 updateStatsDisplay();
+                updateVisualMap();
                 updateButtons();
 
                 countrySelectionEl.style.display = 'none';
@@ -338,16 +359,15 @@
             };
 
             const cost = costs[type];
-            if (playerStats.money >= cost) {
-                if (playerStats[benefits[type].level] >= MAX_UPGRADE_LEVEL && type !== 'social') {
-                     addMessage(`Максимальный уровень для ${type} достигнут!`);
-                     return;
-                }
-                 if (playerStats[benefits[type].level] >= 3 && type === 'social') {
-                     addMessage(`Максимальный уровень для соц. сферы достигнут!`);
-                     return;
-                }
+            const level = playerStats[benefits[type].level];
+            const maxLevel = (type === 'social') ? 3 : MAX_UPGRADE_LEVEL;
 
+            if (level >= maxLevel) {
+                 addMessage(`Максимальный уровень для ${type === 'social' ? 'социальной сферы' : type} достигнут!`);
+                 return;
+            }
+
+            if (playerStats.money >= cost) {
                 playerStats.money -= cost;
                 playerStats[benefits[type].stat] += benefits[type].value;
                 playerStats[benefits[type].level]++;
@@ -387,13 +407,19 @@
 
             addMessage(`Вы напали на ${targetCountry.name}!`);
 
-            const playerPower = playerStats.military + Math.random() * 10;
-            const targetPower = targetCountry.military + Math.random() * 10;
+            // Шанс проигрыша увеличен на 40%. Победа зависит от разницы в силе
+            const playerPower = playerStats.military;
+            const targetPower = targetCountry.military;
+            
+            // Новая логика:
+            // Шанс победы = (сила игрока / (сила игрока + сила цели)) * 0.6 (понижение на 40%)
+            const winChance = (playerPower / (playerPower + targetPower)) * 0.6;
 
-            if (playerPower > targetPower) {
+            if (Math.random() < winChance) {
                 addMessage(`Победа! Вы захватили ${targetCountry.name}.`);
                 countries[targetCode].controlled = true;
                 controlledCountries.push(targetCode);
+                updateVisualMap();
             } else {
                 addMessage(`Поражение! Ваши войска были отбиты ${targetCountry.name}.`);
             }
@@ -417,6 +443,7 @@
                         controlledCountries.splice(index, 1);
                         country.controlled = false;
                         country.police = 0;
+                        updateVisualMap();
                     }
                     updateStatsDisplay();
                 }
@@ -427,32 +454,23 @@
             messagesEl.textContent = text;
         }
 
-        // Обновление карты при выборе страны (один раз)
-        document.getElementById('country-list').addEventListener('click', (e) => {
-            if (e.target.tagName === 'BUTTON') {
-                updateVisualMap(e.target.dataset.country, countries[e.target.dataset.country].flag);
-            }
-        });
+        function updateVisualMap() {
+            const mapArray = visualMap.split('');
+            const playerFlag = countries[playerCountryCode].flag;
+            
+            // Обновляем карту, заменяя "🟩" на флаг игрока, если страна захвачена
+            Object.keys(countries).forEach(code => {
+                if (countries[code].controlled) {
+                    const symbol = countryMapSymbols[code];
+                    for (let i = 0; i < countryMap.length; i++) {
+                        if (countryMap[i] === symbol) {
+                            mapArray[i] = playerFlag;
+                        }
+                    }
+                }
+            });
 
-        // Функция для обновления визуальной карты
-        function updateVisualMap(countryCode, newSymbol) {
-            const map = document.getElementById('visual-map');
-            const mapText = map.textContent;
-            let newMap = mapText.split('');
-            
-            const symbols = {
-                'cn': 'C', 'fr': 'F', 'gb': 'G', 'pl': 'P', 'us': 'U',
-                'ua': 'A', 'es': 'E', 'ie': 'I', 'it': 'T', 'kz': 'K', 'ru': 'R'
-            };
-            const mapKeys = mapText.match(/[A-Z]/g) || [];
-            
-            let playerFlag = countries[playerCountryCode] ? countries[playerCountryCode].flag : '';
-            
-            // Замена символа страны на флаг
-            newMap = newMap.join('').replace(new RegExp(countryCode.toUpperCase(), 'g'), playerFlag).split('');
-            map.textContent = newMap.join('');
+            visualMap = mapArray.join('');
+            visualMapEl.textContent = visualMap.match(new RegExp(`.{1,${MAP_WIDTH}}`, 'g')).join('\n');
         }
-    </script>
-</body>
-    </html>
-    
+    </sc
