@@ -147,6 +147,18 @@
             padding: 10px;
             margin: 5px;
         }
+        .resource-card {
+            background-color: #2c3e50;
+            border-radius: 8px;
+            padding: 15px;
+            width: 100%;
+            text-align: left;
+            margin-top: 10px;
+        }
+        #sell-form input {
+            width: 50px;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
@@ -182,6 +194,10 @@
                     <span>Инфраструктура: <span id="infrastructure-level">0</span> 🏭</span>
                     <span>Социальная сфера: <span id="social-level">0</span> 🛳️</span>
                 </div>
+                <div class="stat-item">
+                    <span>Нефть: <span id="oil-amount">0</span> 🛢️</span>
+                    <span>Пшеница: <span id="wheat-amount">0</span> 🍞</span>
+                </div>
             </div>
 
             <div class="map-wrapper">
@@ -204,6 +220,8 @@
                 <button id="upgrade-social">Развить соц. сферу (75💰)</button>
                 <button id="attack-country">Напасть на страну</button>
                 <button id="create-alliance-btn">Создать Альянс</button>
+                <button id="market-btn">Рынок</button>
+                <button id="news-btn">Новости 📻</button>
             </div>
             
             <div id="alliance-info" style="display: none;">
@@ -237,20 +255,56 @@
         <div id="alliance-country-list" class="country-option"></div>
     </div>
 
+    <div class="popup-overlay" id="market-overlay"></div>
+    <div class="popup" id="market-popup">
+        <div class="popup-header">
+            <h3>Рынок</h3>
+            <button class="close-btn" id="close-market-popup">&times;</button>
+        </div>
+        <div id="market-main-view">
+            <p>Ваши ресурсы: <span id="player-oil">0</span> 🛢️, <span id="player-wheat">0</span> 🍞</p>
+            <p>Выберите, что хотите продать:</p>
+            <div id="sell-options">
+                <button id="sell-oil-btn">Продать Нефть</button>
+                <button id="sell-wheat-btn">Продать Пшеницу</button>
+            </div>
+        </div>
+        <div id="market-sell-view" style="display: none;">
+            <h4>Продажа <span id="selling-resource-name"></span></h4>
+            <p>У вас есть: <span id="selling-resource-count">0</span></p>
+            <form id="sell-form">
+                <label for="sell-quantity">Количество:</label>
+                <input type="number" id="sell-quantity" name="sell-quantity" min="1" value="1">
+                <p>Выберите страну-покупателя:</p>
+                <div id="sell-country-list"></div>
+                <button type="submit">Продать</button>
+            </form>
+            <button id="back-to-market-btn">Назад</button>
+        </div>
+    </div>
+
+    <div class="popup-overlay" id="news-overlay"></div>
+    <div class="popup" id="news-popup">
+        <div class="popup-header">
+            <h3>Новости</h3>
+            <button class="close-btn" id="close-news-popup">&times;</button>
+        </div>
+        <div id="news-feed"></div>
+    </div>
+
     <script>
-        // Переменные для состояния игры
         const countries = {
-            'cn': { name: 'Китай', flag: '🇨🇳', income: 200, military: 15, infrastructure: 10, social: 5, controlled: false, police: 0, inAlliance: false },
-            'fr': { name: 'Франция', flag: '🇨🇵', income: 150, military: 10, infrastructure: 8, social: 8, controlled: false, police: 0, inAlliance: false },
-            'gb': { name: 'Великобритания', flag: '🇬🇧', income: 160, military: 12, infrastructure: 9, social: 7, controlled: false, police: 0, inAlliance: false },
-            'pl': { name: 'Польша', flag: '🇵🇱', income: 100, military: 8, infrastructure: 6, social: 6, controlled: false, police: 0, inAlliance: false },
-            'us': { name: 'США', flag: '🇺🇲', income: 250, military: 20, infrastructure: 15, social: 10, controlled: false, police: 0, inAlliance: false },
-            'ua': { name: 'Украина', flag: '🇺🇦', income: 90, military: 10, infrastructure: 7, social: 5, controlled: false, police: 0, inAlliance: false },
-            'es': { name: 'Испания', flag: '🇪🇦', income: 110, military: 8, infrastructure: 7, social: 7, controlled: false, police: 0, inAlliance: false },
-            'ie': { name: 'Ирландия', flag: '🇮🇪', income: 80, military: 5, infrastructure: 5, social: 6, controlled: false, police: 0, inAlliance: false },
-            'it': { name: 'Италия', flag: '🇮🇹', income: 120, military: 9, infrastructure: 8, social: 9, controlled: false, police: 0, inAlliance: false },
-            'kz': { name: 'Казахстан', flag: '🇰🇿', income: 70, military: 6, infrastructure: 5, social: 4, controlled: false, police: 0, inAlliance: false },
-            'ru': { name: 'Россия', flag: '🇷🇺', income: 180, military: 18, infrastructure: 12, social: 6, controlled: false, police: 0, inAlliance: false }
+            'cn': { name: 'Китай', flag: '🇨🇳', income: 200, military: 15, infrastructure: 10, social: 5, controlled: false, police: 0, inAlliance: false, resources: ['oil'] },
+            'fr': { name: 'Франция', flag: '🇨🇵', income: 150, military: 10, infrastructure: 8, social: 8, controlled: false, police: 0, inAlliance: false, resources: [] },
+            'gb': { name: 'Великобритания', flag: '🇬🇧', income: 160, military: 12, infrastructure: 9, social: 7, controlled: false, police: 0, inAlliance: false, resources: [] },
+            'pl': { name: 'Польша', flag: '🇵🇱', income: 100, military: 8, infrastructure: 6, social: 6, controlled: false, police: 0, inAlliance: false, resources: ['wheat'] },
+            'us': { name: 'США', flag: '🇺🇲', income: 250, military: 20, infrastructure: 15, social: 10, controlled: false, police: 0, inAlliance: false, resources: ['oil'] },
+            'ua': { name: 'Украина', flag: '🇺🇦', income: 90, military: 10, infrastructure: 7, social: 5, controlled: false, police: 0, inAlliance: false, resources: ['wheat'] },
+            'es': { name: 'Испания', flag: '🇪🇦', income: 110, military: 8, infrastructure: 7, social: 7, controlled: false, police: 0, inAlliance: false, resources: ['wheat'] },
+            'ie': { name: 'Ирландия', flag: '🇮🇪', income: 80, military: 5, infrastructure: 5, social: 6, controlled: false, police: 0, inAlliance: false, resources: ['wheat'] },
+            'it': { name: 'Италия', flag: '🇮🇹', income: 120, military: 9, infrastructure: 8, social: 9, controlled: false, police: 0, inAlliance: false, resources: ['wheat'] },
+            'kz': { name: 'Казахстан', flag: '🇰🇿', income: 70, military: 6, infrastructure: 5, social: 4, controlled: false, police: 0, inAlliance: false, resources: ['oil'] },
+            'ru': { name: 'Россия', flag: '🇷🇺', income: 180, military: 18, infrastructure: 12, social: 6, controlled: false, police: 0, inAlliance: false, resources: ['oil'] }
         };
 
         let playerCountryCode = '';
@@ -259,7 +313,9 @@
             military: 0,
             infrastructure: 0,
             social: 0,
-            money: 500
+            money: 500,
+            oil: 0,
+            wheat: 0
         };
         const controlledCountries = [];
         let alliance = {
@@ -267,8 +323,8 @@
             members: [],
             isFormed: false
         };
+        const newsFeed = [];
 
-        // Получение DOM-элементов
         const countrySelectionEl = document.getElementById('country-selection');
         const countryListEl = document.getElementById('country-list');
         const gameScreenEl = document.getElementById('game-screen');
@@ -277,6 +333,8 @@
         const militaryPowerEl = document.getElementById('military-power');
         const infrastructureLevelEl = document.getElementById('infrastructure-level');
         const socialLevelEl = document.getElementById('social-level');
+        const oilAmountEl = document.getElementById('oil-amount');
+        const wheatAmountEl = document.getElementById('wheat-amount');
         const messagesEl = document.getElementById('messages');
         const controlledCountriesEl = document.getElementById('controlled-countries');
         const controlledCountriesListEl = document.getElementById('controlled-countries-list');
@@ -285,30 +343,54 @@
         const allianceFlagEl = document.getElementById('alliance-flag');
         const allianceMembersEl = document.getElementById('alliance-members');
         const proposeAllianceBtn = document.getElementById('propose-alliance-btn');
+        const marketBtn = document.getElementById('market-btn');
+        const newsBtn = document.getElementById('news-btn');
 
-        // Popups
         const allianceOverlay = document.getElementById('alliance-overlay');
         const alliancePopup = document.getElementById('alliance-popup');
         const closeAlliancePopupBtn = document.getElementById('close-alliance-popup');
         const allianceCountryList = document.getElementById('alliance-country-list');
         const allianceFlagOptions = document.querySelector('.flag-option');
 
+        const marketOverlay = document.getElementById('market-overlay');
+        const marketPopup = document.getElementById('market-popup');
+        const closeMarketPopupBtn = document.getElementById('close-market-popup');
+        const marketMainView = document.getElementById('market-main-view');
+        const marketSellView = document.getElementById('market-sell-view');
+        const playerOilEl = document.getElementById('player-oil');
+        const playerWheatEl = document.getElementById('player-wheat');
+        const sellOilBtn = document.getElementById('sell-oil-btn');
+        const sellWheatBtn = document.getElementById('sell-wheat-btn');
+        const sellForm = document.getElementById('sell-form');
+        const sellingResourceNameEl = document.getElementById('selling-resource-name');
+        const sellingResourceCountEl = document.getElementById('selling-resource-count');
+        const sellQuantityInput = document.getElementById('sell-quantity');
+        const sellCountryListEl = document.getElementById('sell-country-list');
+        const backToMarketBtn = document.getElementById('back-to-market-btn');
+        let currentSellingResource = '';
+
+        const newsOverlay = document.getElementById('news-overlay');
+        const newsPopup = document.getElementById('news-popup');
+        const closeNewsPopupBtn = document.getElementById('close-news-popup');
+        const newsFeedEl = document.getElementById('news-feed');
+
         let selectedAllianceFlag = '';
         let intervalId;
 
-        // Обработчики событий
         countryListEl.addEventListener('click', (e) => {
             if (e.target.tagName === 'BUTTON') {
                 playerCountryCode = e.target.dataset.country;
                 countries[playerCountryCode].controlled = true;
-                countries[playerCountryCode].inAlliance = true;
                 
-                // Исправлено: копируем только нужные поля, а не всю структуру
                 playerStats.income = countries[playerCountryCode].income;
                 playerStats.military = countries[playerCountryCode].military;
                 playerStats.infrastructure = countries[playerCountryCode].infrastructure;
                 playerStats.social = countries[playerCountryCode].social;
-                playerStats.money = 500;
+                playerStats.money = 5000; // Увеличен стартовый капитал
+                playerStats.oil = 0;
+                playerStats.wheat = 0;
+
+                addNews(`Игрок выбрал ${countries[playerCountryCode].name} для старта.`);
                 
                 playerCountryFlagEl.textContent = countries[playerCountryCode].flag;
                 updateStatsDisplay();
@@ -333,7 +415,6 @@
             }
         });
 
-        // Альянс
         createAllianceBtn.addEventListener('click', showAlliancePopup);
         proposeAllianceBtn.addEventListener('click', showAlliancePopup);
         closeAlliancePopupBtn.addEventListener('click', hideAlliancePopup);
@@ -342,9 +423,7 @@
         allianceFlagOptions.addEventListener('click', (e) => {
             if (e.target.tagName === 'BUTTON') {
                 selectedAllianceFlag = e.target.dataset.flag;
-                // Снимаем выделение со всех флагов
                 document.querySelectorAll('.flag-option button').forEach(btn => btn.style.border = 'none');
-                // Выделяем выбранный
                 e.target.style.border = '2px solid #ecf0f1';
             }
         });
@@ -356,7 +435,27 @@
             }
         });
 
-        function gameLoop() {
+        marketBtn.addEventListener('click', showMarketPopup);
+        closeMarketPopupBtn.addEventListener('click', hideMarketPopup);
+        marketOverlay.addEventListener('click', hideMarketPopup);
+        sellOilBtn.addEventListener('click', () => showSellResourceView('oil', 'Нефть'));
+        sellWheatBtn.addEventListener('click', () => showSellResourceView('wheat', 'Пшеница'));
+        backToMarketBtn.addEventListener('click', () => {
+            marketMainView.style.display = 'block';
+            marketSellView.style.display = 'none';
+        });
+        sellForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const quantity = parseInt(sellQuantityInput.value);
+            const targetCountryCode = sellCountryListEl.querySelector('input:checked').value;
+            sellResource(currentSellingResource, quantity, targetCountryCode);
+            hideMarketPopup();
+        });
+
+        newsBtn.addEventListener('click', showNewsPopup);
+        closeNewsPopupBtn.addEventListener('click', hideNewsPopup);
+        newsOverlay.addEventListener('click', hideNewsPopup);
+                function gameLoop() {
             let totalIncome = playerStats.income;
             controlledCountries.forEach(countryCode => {
                 totalIncome += countries[countryCode].income;
@@ -371,6 +470,7 @@
             }
 
             playerStats.money += totalIncome;
+            addResources();
             updateStatsDisplay();
             checkRebellion();
             checkAllianceStability();
@@ -381,6 +481,8 @@
             militaryPowerEl.textContent = playerStats.military;
             infrastructureLevelEl.textContent = playerStats.infrastructure;
             socialLevelEl.textContent = playerStats.social;
+            oilAmountEl.textContent = playerStats.oil;
+            wheatAmountEl.textContent = playerStats.wheat;
 
             controlledCountriesListEl.innerHTML = '';
             if (controlledCountries.length > 0) {
@@ -463,6 +565,7 @@
             const targetCountry = countries[targetCode];
 
             addMessage(`Вы напали на ${targetCountry.name}!`);
+            addNews(`Игрок начал военную операцию против ${targetCountry.name}.`);
 
             const playerPower = playerStats.military + Math.random() * 10;
             const targetPower = targetCountry.military + Math.random() * 10;
@@ -471,28 +574,34 @@
 
             if (Math.random() < winChance) {
                 addMessage(`Победа! Вы захватили ${targetCountry.name}.`);
+                addNews(`Срочно: ${targetCountry.name} былa захваченa игроком.`);
                 countries[targetCode].controlled = true;
                 countries[targetCode].inAlliance = true;
                 controlledCountries.push(targetCode);
             } else {
                 addMessage(`Поражение! Ваши войска были отбиты ${targetCountry.name}.`);
+                addNews(`Неудача: войска игрока потерпели поражение в ${targetCountry.name}.`);
             }
             updateStatsDisplay();
         }
-                function checkRebellion() {
+
+        function checkRebellion() {
             controlledCountries.forEach((countryCode, index) => {
                 const country = countries[countryCode];
                 const rebellionChance = Math.max(0.0, 0.8 - country.police * 0.05);
 
                 if (Math.random() < rebellionChance) {
                     addMessage(`Бунт в ${country.name}!`);
+                    addNews(`Внимание: В ${country.name} вспыхнул бунт!`);
                     const playerDefence = playerStats.military / 2;
                     const rebellionPower = country.military / 2;
                     
                     if (playerDefence > rebellionPower) {
                         addMessage(`Бунт в ${country.name} успешно подавлен!`);
+                        addNews(`Бунт в ${country.name} былa быстро подавлен.`);
                     } else {
                         addMessage(`Бунт в ${country.name} оказался слишком сильным. Страна свергла ваше правление!`);
+                        addNews(`Бунт в ${country.name} оказался успешным! Страна вышла из-под контроля игрока.`);
                         controlledCountries.splice(index, 1);
                         country.controlled = false;
                         country.police = 0;
@@ -520,7 +629,6 @@
                  document.querySelector('#alliance-popup > p').style.display = 'block';
                  document.querySelector('#alliance-popup h3').textContent = 'Создание Альянса';
             }
-
             updateAllianceCountryList();
         }
 
@@ -560,11 +668,13 @@
 
             if (Math.random() < acceptanceChance) {
                 addMessage(`${targetCountry.name} согласилась вступить в альянс!`);
+                addNews(`${targetCountry.name} вступила в альянс "${alliance.flag}".`);
                 alliance.members.push(targetCountryCode);
                 targetCountry.inAlliance = true;
                 alliance.isFormed = true;
             } else {
                 addMessage(`${targetCountry.name} отказалась вступать в альянс.`);
+                addNews(`${targetCountry.name} отказалась от предложения альянса. Дипломатический провал.`);
             }
 
             hideAlliancePopup();
@@ -584,6 +694,7 @@
                 if (Math.random() < leaveChance) {
                     const countryName = countries[memberCode].name;
                     addMessage(`${countryName} покинула ваш альянс!`);
+                    addNews(`${countryName} внезапно вышла из альянса.`);
                     
                     countries[memberCode].inAlliance = false;
                     alliance.members.splice(index, 1);
@@ -592,11 +703,79 @@
                         alliance.isFormed = false;
                         alliance.flag = '';
                         addMessage('Ваш альянс распался.');
+                        addNews('Альянс распался.');
                     }
                     updateStatsDisplay();
                 }
             });
         }
-    </script>
-</body>
-</html>
+
+        function addResources() {
+            controlledCountries.forEach(countryCode => {
+                const country = countries[countryCode];
+                country.resources.forEach(resource => {
+                    if (resource === 'oil') {
+                        playerStats.oil += 10;
+                    } else if (resource === 'wheat') {
+                        playerStats.wheat += 10;
+                    }
+                });
+            });
+        }
+
+        function showMarketPopup() {
+            marketOverlay.style.display = 'block';
+            marketPopup.style.display = 'block';
+            playerOilEl.textContent = playerStats.oil;
+            playerWheatEl.textContent = playerStats.wheat;
+            marketMainView.style.display = 'block';
+            marketSellView.style.display = 'none';
+        }
+
+        function hideMarketPopup() {
+            marketOverlay.style.display = 'none';
+            marketPopup.style.display = 'none';
+        }
+
+        function showSellResourceView(resourceType, resourceName) {
+            currentSellingResource = resourceType;
+            sellingResourceNameEl.textContent = resourceName;
+            sellingResourceCountEl.textContent = playerStats[resourceType];
+            
+            marketMainView.style.display = 'none';
+            marketSellView.style.display = 'block';
+
+            sellQuantityInput.value = 1;
+            sellQuantityInput.max = playerStats[resourceType];
+
+            sellCountryListEl.innerHTML = '';
+            const availableCountries = Object.keys(countries).filter(code => code !== playerCountryCode);
+            availableCountries.forEach(countryCode => {
+                const country = countries[countryCode];
+                const label = document.createElement('label');
+                label.innerHTML = `<input type="radio" name="target-country" value="${countryCode}" required> ${country.flag} ${country.name}`;
+                sellCountryListEl.appendChild(label);
+            });
+        }
+
+        function sellResource(resourceType, quantity, targetCountryCode) {
+            const price = resourceType === 'oil' ? 50 : 25;
+            
+            if (playerStats[resourceType] < quantity) {
+                addMessage(`У вас недостаточно ${resourceType === 'oil' ? 'нефти' : 'пшеницы'}.`);
+                return;
+            }
+
+            if (Math.random() < 0.5) {
+                playerStats[resourceType] -= quantity;
+                playerStats.money += quantity * price;
+                addMessage(`Вы успешно продали ${quantity} ед. ${resourceType === 'oil' ? 'нефти' : 'пшеницы'} в ${countries[targetCountryCode].name} за ${quantity * price}💰.`);
+                addNews(`Игрок успешно продал ресурсы в ${countries[targetCountryCode].name}.`);
+            } else {
+                addMessage(`${countries[targetCountryCode].name} отказалась покупать ${resourceType === 'oil' ? 'нефть' : 'пшеницу'}.`);
+                addNews(`${countries[targetCountryCode].name} отказались от сделки с игроком.`);
+            }
+            updateStatsDisplay();
+            hideMarketPopup();
+        }
+        
