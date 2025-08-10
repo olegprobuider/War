@@ -455,7 +455,7 @@
         newsBtn.addEventListener('click', showNewsPopup);
         closeNewsPopupBtn.addEventListener('click', hideNewsPopup);
         newsOverlay.addEventListener('click', hideNewsPopup);
-            function gameLoop() {
+                                                                   function gameLoop() {
             let totalIncome = playerStats.income;
             controlledCountries.forEach(countryCode => {
                 totalIncome += countries[countryCode].income;
@@ -777,5 +777,5 @@
             }
             updateStatsDisplay();
             hideMarketPopup();
-        }
-        
+                        }
+                                       
