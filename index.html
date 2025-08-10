@@ -104,6 +104,13 @@
             background-color: #2980b9;
             color: #ecf0f1;
         }
+        .legend {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .legend span {
+            margin: 0 5px;
+        }
     </style>
 </head>
 <body>
@@ -142,15 +149,16 @@
             </div>
 
             <div class="map-wrapper">
+                <div class="legend" id="map-legend"></div>
                 <pre class="map" id="world-map">
-                    🟩🟩🟩🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦
-                    🟩🟩🟩🟩🟩🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦
-                    🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟦🟦🟦🟦🟦
-                    🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟦🟦
-                    🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩
-                    🟦🟦🟦🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩
-                    🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦
-                    🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦
+                    ~~PL~~GB~~~~~~IE~~~~FR~~IT~~~~~~~~~UA~RU~~~~~~~~~~~~~~~~~~~~~~~~~~~CN~~
+                    ~~~PL~~~GB~~~~~~IE~FR~~~IT~~~ES~~~~~UA~~~~~~RU~~~~~~~KZ~~~~~~~~~CN~~~
+                    ~~~~~GB~~~FR~~~~~~IT~ES~~~~~~~~~~~~~~RU~~~~~~~~~~~~~~~~~~~~~~CN~~
+                    ~~~US~~~~~~~~~~~~~~FR~~~~~ES~~~~~~~~~~~~~~~~~~~~~~~~~RU~~~~~~~~
+                    ~~US~~~RU~~~~~~~~~~~~~~~~~KZ~~~~~~~~
+                    ~~~~~~~~~~UA~~~~~~~~~~~~~~~~~~CN~~~
+                    ~~~~~~~~~~US~~~~~~RU~~~~~~~~~~~~
+                    ~~~~~UA~~~~~US~~~~~~~~~~KZ~~~~~~~~
                 </pre>
             </div>
 
@@ -172,7 +180,6 @@
     </div>
 
     <script>
-        // Переменные для состояния игры
         const countries = {
             'cn': { name: 'Китай', flag: '🇨🇳', income: 200, military: 15, infrastructure: 10, social: 5, controlled: false, police: 0 },
             'fr': { name: 'Франция', flag: '🇨🇵', income: 150, military: 10, infrastructure: 8, social: 8, controlled: false, police: 0 },
@@ -197,7 +204,8 @@
         };
         const controlledCountries = [];
 
-        // Получение DOM-элементов
+        const originalMap = document.getElementById('world-map').textContent;
+
         const countrySelectionEl = document.getElementById('country-selection');
         const gameScreenEl = document.getElementById('game-screen');
         const playerCountryFlagEl = document.getElementById('player-country-flag');
@@ -208,24 +216,26 @@
         const messagesEl = document.getElementById('messages');
         const controlledCountriesEl = document.getElementById('controlled-countries');
         const controlledCountriesListEl = document.getElementById('controlled-countries-list');
+        const mapEl = document.getElementById('world-map');
+        const mapLegendEl = document.getElementById('map-legend');
 
-        // Обработчики событий
         document.getElementById('country-list').addEventListener('click', (e) => {
             if (e.target.tagName === 'BUTTON') {
                 playerCountryCode = e.target.dataset.country;
                 countries[playerCountryCode].controlled = true;
                 playerStats = { ...countries[playerCountryCode] };
-                playerStats.money = 500; // Начальный капитал
+                playerStats.money = 500;
                 
                 playerCountryFlagEl.textContent = countries[playerCountryCode].flag;
                 updateStatsDisplay();
-                
+                updateMap();
+                createLegend();
+
                 countrySelectionEl.style.display = 'none';
                 gameScreenEl.style.display = 'block';
 
                 addMessage(`Добро пожаловать, вы выбрали ${countries[playerCountryCode].name}!`);
 
-                // Запуск игрового цикла
                 setInterval(gameLoop, 5000);
             }
         });
@@ -241,16 +251,12 @@
             }
         });
 
-        // Основной игровой цикл
         function gameLoop() {
-            // Доход от собственной страны
-            playerStats.money += playerStats.income;
-
-            // Доход от захваченных стран
+            let totalIncome = playerStats.income;
             controlledCountries.forEach(countryCode => {
-                playerStats.money += countries[countryCode].income;
+                totalIncome += countries[countryCode].income;
             });
-
+            playerStats.money += totalIncome;
             updateStatsDisplay();
             checkRebellion();
         }
@@ -261,7 +267,6 @@
             infrastructureLevelEl.textContent = playerStats.infrastructure;
             socialLevelEl.textContent = playerStats.social;
 
-            // Обновление списка захваченных стран
             controlledCountriesListEl.innerHTML = '';
             if (controlledCountries.length > 0) {
                 controlledCountriesEl.style.display = 'block';
@@ -285,22 +290,20 @@
 
         function upgrade(type) {
             const costs = {
-                'infrastructure': 100,
-                'military': 150,
-                'social': 75
+                'infrastructure': 100, 'military': 150, 'social': 75
             };
             const benefits = {
-                'infrastructure': { stat: 'infrastructure', value: 1, money: 20 },
+                'infrastructure': { stat: 'infrastructure', value: 1, incomeBoost: 20 },
                 'military': { stat: 'military', value: 2 },
-                'social': { stat: 'social', value: 1, money: 10 }
+                'social': { stat: 'social', value: 1, incomeBoost: 10 }
             };
 
             const cost = costs[type];
             if (playerStats.money >= cost) {
                 playerStats.money -= cost;
                 playerStats[benefits[type].stat] += benefits[type].value;
-                if (benefits[type].money) {
-                    playerStats.income += benefits[type].money;
+                if (benefits[type].incomeBoost) {
+                    playerStats.income += benefits[type].incomeBoost;
                 }
                 updateStatsDisplay();
                 addMessage(`Вы успешно улучшили ${type}!`);
@@ -334,7 +337,6 @@
 
             addMessage(`Вы напали на ${targetCountry.name}!`);
 
-            // Сравнение военных сил с небольшим элементом случайности
             const playerPower = playerStats.military + Math.random() * 10;
             const targetPower = targetCountry.military + Math.random() * 10;
 
@@ -342,6 +344,7 @@
                 addMessage(`Победа! Вы захватили ${targetCountry.name}.`);
                 countries[targetCode].controlled = true;
                 controlledCountries.push(targetCode);
+                updateMap();
             } else {
                 addMessage(`Поражение! Ваши войска были отбиты ${targetCountry.name}.`);
             }
@@ -351,12 +354,11 @@
         function checkRebellion() {
             controlledCountries.forEach((countryCode, index) => {
                 const country = countries[countryCode];
-                // Шанс бунта: 50% минус 5% за каждый уровень полиции
                 const rebellionChance = Math.max(0.0, 0.5 - country.police * 0.05);
 
                 if (Math.random() < rebellionChance) {
                     addMessage(`Бунт в ${country.name}!`);
-                    const playerDefence = playerStats.military / 2; // Половина армии на подавление
+                    const playerDefence = playerStats.military / 2;
                     const rebellionPower = country.military / 2;
                     
                     if (playerDefence > rebellionPower) {
@@ -366,6 +368,7 @@
                         controlledCountries.splice(index, 1);
                         country.controlled = false;
                         country.police = 0;
+                        updateMap();
                     }
                     updateStatsDisplay();
                 }
@@ -376,6 +379,34 @@
             messagesEl.textContent = text;
         }
 
+        function updateMap() {
+            let newMap = originalMap;
+            const playerFlag = countries[playerCountryCode].flag;
+
+            Object.keys(countries).forEach(code => {
+                if (countries[code].controlled) {
+                    const countrySymbol = code.toUpperCase();
+                    const regex = new RegExp(countrySymbol, 'g');
+                    newMap = newMap.replace(regex, playerFlag);
+                } else {
+                    const countrySymbol = code.toUpperCase();
+                    const regex = new RegExp(countrySymbol, 'g');
+                    newMap = newMap.replace(regex, '🟩');
+                }
+            });
+
+            newMap = newMap.replace(/~/g, '🟦');
+            mapEl.textContent = newMap;
+        }
+
+        function createLegend() {
+            mapLegendEl.innerHTML = 'Легенда: ';
+            Object.keys(countries).forEach(code => {
+                const legendItem = document.createElement('span');
+                legendItem.innerHTML = `**${code.toUpperCase()}** = ${countries[code].name}`;
+                mapLegendEl.appendChild(legendItem);
+            });
+        }
     </script>
 </body>
 </html>
