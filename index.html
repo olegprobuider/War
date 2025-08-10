@@ -104,6 +104,49 @@
             background-color: #2980b9;
             color: #ecf0f1;
         }
+        .popup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #34495e;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+            z-index: 100;
+        }
+        .popup-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 99;
+        }
+        .popup-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .popup-header h3 {
+            margin: 0;
+        }
+        .close-btn {
+            background: none;
+            border: none;
+            color: #ecf0f1;
+            font-size: 1.5em;
+            cursor: pointer;
+        }
+        .flag-option button, .country-option button {
+            font-size: 2em;
+            padding: 10px;
+            margin: 5px;
+        }
     </style>
 </head>
 <body>
@@ -160,6 +203,13 @@
                 <button id="upgrade-military">Нанять военных (150💰)</button>
                 <button id="upgrade-social">Развить соц. сферу (75💰)</button>
                 <button id="attack-country">Напасть на страну</button>
+                <button id="create-alliance-btn">Создать Альянс</button>
+            </div>
+            
+            <div id="alliance-info" style="display: none;">
+                <h3>Ваш Альянс: <span id="alliance-flag"></span></h3>
+                <p>Участники: <span id="alliance-members"></span></p>
+                <button id="propose-alliance-btn">Предложить другой стране</button>
             </div>
 
             <div id="controlled-countries" style="display: none;">
@@ -171,20 +221,36 @@
         </div>
     </div>
 
+    <div class="popup-overlay" id="alliance-overlay"></div>
+    <div class="popup" id="alliance-popup">
+        <div class="popup-header">
+            <h3>Создание Альянса</h3>
+            <button class="close-btn" id="close-alliance-popup">&times;</button>
+        </div>
+        <p>Выберите флаг альянса:</p>
+        <div class="flag-option">
+            <button data-flag="🏴‍☠️">🏴‍☠️</button>
+            <button data-flag="🇦🇶">🇦🇶</button>
+            <button data-flag="🇺🇳">🇺🇳</button>
+        </div>
+        <p>Выберите страну для приглашения:</p>
+        <div id="alliance-country-list" class="country-option"></div>
+    </div>
+
     <script>
         // Переменные для состояния игры
         const countries = {
-            'cn': { name: 'Китай', flag: '🇨🇳', income: 200, military: 15, infrastructure: 10, social: 5, controlled: false, police: 0 },
-            'fr': { name: 'Франция', flag: '🇨🇵', income: 150, military: 10, infrastructure: 8, social: 8, controlled: false, police: 0 },
-            'gb': { name: 'Великобритания', flag: '🇬🇧', income: 160, military: 12, infrastructure: 9, social: 7, controlled: false, police: 0 },
-            'pl': { name: 'Польша', flag: '🇵🇱', income: 100, military: 8, infrastructure: 6, social: 6, controlled: false, police: 0 },
-            'us': { name: 'США', flag: '🇺🇲', income: 250, military: 20, infrastructure: 15, social: 10, controlled: false, police: 0 },
-            'ua': { name: 'Украина', flag: '🇺🇦', income: 90, military: 10, infrastructure: 7, social: 5, controlled: false, police: 0 },
-            'es': { name: 'Испания', flag: '🇪🇦', income: 110, military: 8, infrastructure: 7, social: 7, controlled: false, police: 0 },
-            'ie': { name: 'Ирландия', flag: '🇮🇪', income: 80, military: 5, infrastructure: 5, social: 6, controlled: false, police: 0 },
-            'it': { name: 'Италия', flag: '🇮🇹', income: 120, military: 9, infrastructure: 8, social: 9, controlled: false, police: 0 },
-            'kz': { name: 'Казахстан', flag: '🇰🇿', income: 70, military: 6, infrastructure: 5, social: 4, controlled: false, police: 0 },
-            'ru': { name: 'Россия', flag: '🇷🇺', income: 180, military: 18, infrastructure: 12, social: 6, controlled: false, police: 0 }
+            'cn': { name: 'Китай', flag: '🇨🇳', income: 200, military: 15, infrastructure: 10, social: 5, controlled: false, police: 0, inAlliance: false },
+            'fr': { name: 'Франция', flag: '🇨🇵', income: 150, military: 10, infrastructure: 8, social: 8, controlled: false, police: 0, inAlliance: false },
+            'gb': { name: 'Великобритания', flag: '🇬🇧', income: 160, military: 12, infrastructure: 9, social: 7, controlled: false, police: 0, inAlliance: false },
+            'pl': { name: 'Польша', flag: '🇵🇱', income: 100, military: 8, infrastructure: 6, social: 6, controlled: false, police: 0, inAlliance: false },
+            'us': { name: 'США', flag: '🇺🇲', income: 250, military: 20, infrastructure: 15, social: 10, controlled: false, police: 0, inAlliance: false },
+            'ua': { name: 'Украина', flag: '🇺🇦', income: 90, military: 10, infrastructure: 7, social: 5, controlled: false, police: 0, inAlliance: false },
+            'es': { name: 'Испания', flag: '🇪🇦', income: 110, military: 8, infrastructure: 7, social: 7, controlled: false, police: 0, inAlliance: false },
+            'ie': { name: 'Ирландия', flag: '🇮🇪', income: 80, military: 5, infrastructure: 5, social: 6, controlled: false, police: 0, inAlliance: false },
+            'it': { name: 'Италия', flag: '🇮🇹', income: 120, military: 9, infrastructure: 8, social: 9, controlled: false, police: 0, inAlliance: false },
+            'kz': { name: 'Казахстан', flag: '🇰🇿', income: 70, military: 6, infrastructure: 5, social: 4, controlled: false, police: 0, inAlliance: false },
+            'ru': { name: 'Россия', flag: '🇷🇺', income: 180, military: 18, infrastructure: 12, social: 6, controlled: false, police: 0, inAlliance: false }
         };
 
         let playerCountryCode = '';
@@ -196,6 +262,11 @@
             money: 500
         };
         const controlledCountries = [];
+        let alliance = {
+            flag: '',
+            members: [],
+            isFormed: false
+        };
 
         // Получение DOM-элементов
         const countrySelectionEl = document.getElementById('country-selection');
@@ -208,14 +279,30 @@
         const messagesEl = document.getElementById('messages');
         const controlledCountriesEl = document.getElementById('controlled-countries');
         const controlledCountriesListEl = document.getElementById('controlled-countries-list');
+        const createAllianceBtn = document.getElementById('create-alliance-btn');
+        const allianceInfoEl = document.getElementById('alliance-info');
+        const allianceFlagEl = document.getElementById('alliance-flag');
+        const allianceMembersEl = document.getElementById('alliance-members');
+        const proposeAllianceBtn = document.getElementById('propose-alliance-btn');
+
+        // Popups
+        const allianceOverlay = document.getElementById('alliance-overlay');
+        const alliancePopup = document.getElementById('alliance-popup');
+        const closeAlliancePopupBtn = document.getElementById('close-alliance-popup');
+        const allianceCountryList = document.getElementById('alliance-country-list');
+        const allianceFlagOptions = document.querySelector('.flag-option');
+
+        let selectedAllianceFlag = '';
+        let intervalId;
 
         // Обработчики событий
         document.getElementById('country-list').addEventListener('click', (e) => {
             if (e.target.tagName === 'BUTTON') {
                 playerCountryCode = e.target.dataset.country;
                 countries[playerCountryCode].controlled = true;
+                countries[playerCountryCode].inAlliance = true;
                 playerStats = { ...countries[playerCountryCode] };
-                playerStats.money = 500; // Начальный капитал
+                playerStats.money = 500;
                 
                 playerCountryFlagEl.textContent = countries[playerCountryCode].flag;
                 updateStatsDisplay();
@@ -225,8 +312,7 @@
 
                 addMessage(`Добро пожаловать, вы выбрали ${countries[playerCountryCode].name}!`);
 
-                // Запуск игрового цикла
-                setInterval(gameLoop, 5000);
+                intervalId = setInterval(gameLoop, 5000);
             }
         });
 
@@ -241,18 +327,46 @@
             }
         });
 
-        // Основной игровой цикл
-        function gameLoop() {
-            // Доход от собственной страны
-            playerStats.money += playerStats.income;
+        // Альянс
+        createAllianceBtn.addEventListener('click', showAlliancePopup);
+        proposeAllianceBtn.addEventListener('click', showAlliancePopup);
+        closeAlliancePopupBtn.addEventListener('click', hideAlliancePopup);
+        allianceOverlay.addEventListener('click', hideAlliancePopup);
 
-            // Доход от захваченных стран
+        allianceFlagOptions.addEventListener('click', (e) => {
+            if (e.target.tagName === 'BUTTON') {
+                selectedAllianceFlag = e.target.dataset.flag;
+                // Снимаем выделение со всех флагов
+                document.querySelectorAll('.flag-option button').forEach(btn => btn.style.border = 'none');
+                // Выделяем выбранный
+                e.target.style.border = '2px solid #ecf0f1';
+            }
+        });
+
+        allianceCountryList.addEventListener('click', (e) => {
+            if (e.target.tagName === 'BUTTON') {
+                const targetCountryCode = e.target.dataset.country;
+                proposeAlliance(targetCountryCode);
+            }
+        });
+
+        function gameLoop() {
+            let totalIncome = playerStats.income;
             controlledCountries.forEach(countryCode => {
-                playerStats.money += countries[countryCode].income;
+                totalIncome += countries[countryCode].income;
             });
 
+            // Доход от альянса (10% от дохода всех участников)
+            if (alliance.isFormed) {
+                alliance.members.forEach(memberCode => {
+                    totalIncome += countries[memberCode].income * 0.1;
+                });
+            }
+
+            playerStats.money += totalIncome;
             updateStatsDisplay();
             checkRebellion();
+            checkAllianceStability();
         }
 
         function updateStatsDisplay() {
@@ -261,7 +375,6 @@
             infrastructureLevelEl.textContent = playerStats.infrastructure;
             socialLevelEl.textContent = playerStats.social;
 
-            // Обновление списка захваченных стран
             controlledCountriesListEl.innerHTML = '';
             if (controlledCountries.length > 0) {
                 controlledCountriesEl.style.display = 'block';
@@ -280,6 +393,17 @@
                 });
             } else {
                 controlledCountriesEl.style.display = 'none';
+            }
+            
+            // Обновление информации об альянсе
+            if (alliance.isFormed) {
+                createAllianceBtn.style.display = 'none';
+                allianceInfoEl.style.display = 'block';
+                allianceFlagEl.textContent = alliance.flag;
+                allianceMembersEl.textContent = alliance.members.map(code => countries[code].flag).join(' ');
+            } else {
+                createAllianceBtn.style.display = 'inline-block';
+                allianceInfoEl.style.display = 'none';
             }
         }
 
@@ -322,10 +446,10 @@
         }
 
         function attack() {
-            const availableCountries = Object.keys(countries).filter(code => !countries[code].controlled);
-
+            const availableCountries = Object.keys(countries).filter(code => !countries[code].controlled && !countries[code].inAlliance);
+            
             if (availableCountries.length === 0) {
-                addMessage('Все страны захвачены!');
+                addMessage('Все страны захвачены или в альянсе!');
                 return;
             }
 
@@ -334,16 +458,15 @@
 
             addMessage(`Вы напали на ${targetCountry.name}!`);
 
-            // Сравнение военных сил с небольшим элементом случайности
             const playerPower = playerStats.military + Math.random() * 10;
             const targetPower = targetCountry.military + Math.random() * 10;
 
-            // Новая логика: Шанс победы уменьшен на 30%
             const winChance = (playerPower / (playerPower + targetPower)) * 0.7;
 
             if (Math.random() < winChance) {
                 addMessage(`Победа! Вы захватили ${targetCountry.name}.`);
                 countries[targetCode].controlled = true;
+                countries[targetCode].inAlliance = true;
                 controlledCountries.push(targetCode);
             } else {
                 addMessage(`Поражение! Ваши войска были отбиты ${targetCountry.name}.`);
@@ -354,32 +477,8 @@
         function checkRebellion() {
             controlledCountries.forEach((countryCode, index) => {
                 const country = countries[countryCode];
-                // Новый шанс бунта: 80% минус 5% за каждый уровень полиции
                 const rebellionChance = Math.max(0.0, 0.8 - country.police * 0.05);
 
                 if (Math.random() < rebellionChance) {
                     addMessage(`Бунт в ${country.name}!`);
-                    const playerDefence = playerStats.military / 2; // Половина армии на подавление
-                    const rebellionPower = country.military / 2;
-                    
-                    if (playerDefence > rebellionPower) {
-                        addMessage(`Бунт в ${country.name} успешно подавлен!`);
-                    } else {
-                        addMessage(`Бунт в ${country.name} оказался слишком сильным. Страна свергла ваше правление!`);
-                        controlledCountries.splice(index, 1);
-                        country.controlled = false;
-                        country.police = 0;
-                    }
-                    updateStatsDisplay();
-                }
-            });
-        }
-
-        function addMessage(text) {
-            messagesEl.textContent = text;
-        }
-
-    </script>
-</body>
-    </html>
-    
+     
