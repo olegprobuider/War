@@ -188,17 +188,17 @@
 
     <script>
         const countries = {
-            'cn': { name: 'Китай', flag: '🇨🇳', income: 200, military: 15, infrastructure: 10, social: 5, controlled: false, police: 0 },
-            'fr': { name: 'Франция', flag: '🇨🇵', income: 150, military: 10, infrastructure: 8, social: 8, controlled: false, police: 0 },
-            'gb': { name: 'Великобритания', flag: '🇬🇧', income: 160, military: 12, infrastructure: 9, social: 7, controlled: false, police: 0 },
-            'pl': { name: 'Польша', flag: '🇵🇱', income: 100, military: 8, infrastructure: 6, social: 6, controlled: false, police: 0 },
-            'us': { name: 'США', flag: '🇺🇲', income: 250, military: 20, infrastructure: 15, social: 10, controlled: false, police: 0 },
-            'ua': { name: 'Украина', flag: '🇺🇦', income: 90, military: 10, infrastructure: 7, social: 5, controlled: false, police: 0 },
-            'es': { name: 'Испания', flag: '🇪🇦', income: 110, military: 8, infrastructure: 7, social: 7, controlled: false, police: 0 },
-            'ie': { name: 'Ирландия', flag: '🇮🇪', income: 80, military: 5, infrastructure: 5, social: 6, controlled: false, police: 0 },
-            'it': { name: 'Италия', flag: '🇮🇹', income: 120, military: 9, infrastructure: 8, social: 9, controlled: false, police: 0 },
-            'kz': { name: 'Казахстан', flag: '🇰🇿', income: 70, military: 6, infrastructure: 5, social: 4, controlled: false, police: 0 },
-            'ru': { name: 'Россия', flag: '🇷🇺', income: 180, military: 18, infrastructure: 12, social: 6, controlled: false, police: 0 }
+            'cn': { name: 'Китай', flag: '🇨🇳', income: 200, military: 15, infrastructure: 10, social: 5, controlled: false, police: 0, mapIndex: 12 },
+            'fr': { name: 'Франция', flag: '🇨🇵', income: 150, military: 10, infrastructure: 8, social: 8, controlled: false, police: 0, mapIndex: 43 },
+            'gb': { name: 'Великобритания', flag: '🇬🇧', income: 160, military: 12, infrastructure: 9, social: 7, controlled: false, police: 0, mapIndex: 45 },
+            'pl': { name: 'Польша', flag: '🇵🇱', income: 100, military: 8, infrastructure: 6, social: 6, controlled: false, police: 0, mapIndex: 47 },
+            'us': { name: 'США', flag: '🇺🇲', income: 250, military: 20, infrastructure: 15, social: 10, controlled: false, police: 0, mapIndex: 72 },
+            'ua': { name: 'Украина', flag: '🇺🇦', income: 90, military: 10, infrastructure: 7, social: 5, controlled: false, police: 0, mapIndex: 78 },
+            'es': { name: 'Испания', flag: '🇪🇦', income: 110, military: 8, infrastructure: 7, social: 7, controlled: false, police: 0, mapIndex: 61 },
+            'ie': { name: 'Ирландия', flag: '🇮🇪', income: 80, military: 5, infrastructure: 5, social: 6, controlled: false, police: 0, mapIndex: 63 },
+            'it': { name: 'Италия', flag: '🇮🇹', income: 120, military: 9, infrastructure: 8, social: 9, controlled: false, police: 0, mapIndex: 65 },
+            'kz': { name: 'Казахстан', flag: '🇰🇿', income: 70, military: 6, infrastructure: 5, social: 4, controlled: false, police: 0, mapIndex: 68 },
+            'ru': { name: 'Россия', flag: '🇷🇺', income: 180, military: 18, infrastructure: 12, social: 6, controlled: false, police: 0, mapIndex: 70 }
         };
 
         let playerCountryCode = '';
@@ -213,19 +213,6 @@
             socialLevel: 0
         };
         const controlledCountries = [];
-
-        // Карта для отслеживания стран
-        const countryMap = "AAAAAAAAAAAAAAAAAAAA" + // 20 символов
-                         "AAABBCCCDDEEGGHHHHII" +
-                         "JKLMMNNOPQRSSTUVWXYY" +
-                         "ZZZabcdefghijkllmnoo" +
-                         "ppqqrrrsttuuuuvvwwxy" +
-                         "yyzz1234567890!@#$%^";
-
-        const countryMapSymbols = {
-            'cn': 'A', 'fr': 'B', 'gb': 'C', 'pl': 'D', 'us': 'E',
-            'ua': 'G', 'es': 'H', 'ie': 'I', 'it': 'J', 'kz': 'K', 'ru': 'L'
-        };
 
         let visualMap = "🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦" +
                         "🟦🟦🟩🟩🟩🟩🟩🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦" +
@@ -407,12 +394,9 @@
 
             addMessage(`Вы напали на ${targetCountry.name}!`);
 
-            // Шанс проигрыша увеличен на 40%. Победа зависит от разницы в силе
             const playerPower = playerStats.military;
             const targetPower = targetCountry.military;
             
-            // Новая логика:
-            // Шанс победы = (сила игрока / (сила игрока + сила цели)) * 0.6 (понижение на 40%)
             const winChance = (playerPower / (playerPower + targetPower)) * 0.6;
 
             if (Math.random() < winChance) {
@@ -455,22 +439,22 @@
         }
 
         function updateVisualMap() {
-            const mapArray = visualMap.split('');
+            let mapArray = visualMap.split('');
             const playerFlag = countries[playerCountryCode].flag;
             
-            // Обновляем карту, заменяя "🟩" на флаг игрока, если страна захвачена
-            Object.keys(countries).forEach(code => {
-                if (countries[code].controlled) {
-                    const symbol = countryMapSymbols[code];
-                    for (let i = 0; i < countryMap.length; i++) {
-                        if (countryMap[i] === symbol) {
-                            mapArray[i] = playerFlag;
-                        }
-                    }
-                }
+            // Сначала обновляем флаг собственной страны
+            const myCountryIndex = countries[playerCountryCode].mapIndex;
+            mapArray[myCountryIndex] = playerFlag;
+
+            // Затем обновляем флаги всех захваченных стран
+            controlledCountries.forEach(countryCode => {
+                const countryIndex = countries[countryCode].mapIndex;
+                mapArray[countryIndex] = playerFlag;
             });
 
             visualMap = mapArray.join('');
             visualMapEl.textContent = visualMap.match(new RegExp(`.{1,${MAP_WIDTH}}`, 'g')).join('\n');
         }
-    </sc
+    </script>
+</body>
+</html>
