@@ -270,6 +270,7 @@
 
         // Получение DOM-элементов
         const countrySelectionEl = document.getElementById('country-selection');
+        const countryListEl = document.getElementById('country-list');
         const gameScreenEl = document.getElementById('game-screen');
         const playerCountryFlagEl = document.getElementById('player-country-flag');
         const incomeEl = document.getElementById('income');
@@ -296,12 +297,17 @@
         let intervalId;
 
         // Обработчики событий
-        document.getElementById('country-list').addEventListener('click', (e) => {
+        countryListEl.addEventListener('click', (e) => {
             if (e.target.tagName === 'BUTTON') {
                 playerCountryCode = e.target.dataset.country;
                 countries[playerCountryCode].controlled = true;
                 countries[playerCountryCode].inAlliance = true;
-                playerStats = { ...countries[playerCountryCode] };
+                
+                // Исправлено: копируем только нужные поля, а не всю структуру
+                playerStats.income = countries[playerCountryCode].income;
+                playerStats.military = countries[playerCountryCode].military;
+                playerStats.infrastructure = countries[playerCountryCode].infrastructure;
+                playerStats.social = countries[playerCountryCode].social;
                 playerStats.money = 500;
                 
                 playerCountryFlagEl.textContent = countries[playerCountryCode].flag;
@@ -356,7 +362,6 @@
                 totalIncome += countries[countryCode].income;
             });
 
-            // Доход от альянса (10% от дохода всех участников)
             if (alliance.isFormed) {
                 alliance.members.forEach(memberCode => {
                     if (memberCode !== playerCountryCode) {
@@ -397,7 +402,6 @@
                 controlledCountriesEl.style.display = 'none';
             }
             
-            // Обновление информации об альянсе
             if (alliance.isFormed) {
                 createAllianceBtn.style.display = 'none';
                 allianceInfoEl.style.display = 'block';
@@ -455,5 +459,144 @@
                 return;
             }
 
-            const targetCode
-    
+            const targetCode = availableCountries[Math.floor(Math.random() * availableCountries.length)];
+            const targetCountry = countries[targetCode];
+
+            addMessage(`Вы напали на ${targetCountry.name}!`);
+
+            const playerPower = playerStats.military + Math.random() * 10;
+            const targetPower = targetCountry.military + Math.random() * 10;
+
+            const winChance = (playerPower / (playerPower + targetPower)) * 0.7;
+
+            if (Math.random() < winChance) {
+                addMessage(`Победа! Вы захватили ${targetCountry.name}.`);
+                countries[targetCode].controlled = true;
+                countries[targetCode].inAlliance = true;
+                controlledCountries.push(targetCode);
+            } else {
+                addMessage(`Поражение! Ваши войска были отбиты ${targetCountry.name}.`);
+            }
+            updateStatsDisplay();
+        }
+                function checkRebellion() {
+            controlledCountries.forEach((countryCode, index) => {
+                const country = countries[countryCode];
+                const rebellionChance = Math.max(0.0, 0.8 - country.police * 0.05);
+
+                if (Math.random() < rebellionChance) {
+                    addMessage(`Бунт в ${country.name}!`);
+                    const playerDefence = playerStats.military / 2;
+                    const rebellionPower = country.military / 2;
+                    
+                    if (playerDefence > rebellionPower) {
+                        addMessage(`Бунт в ${country.name} успешно подавлен!`);
+                    } else {
+                        addMessage(`Бунт в ${country.name} оказался слишком сильным. Страна свергла ваше правление!`);
+                        controlledCountries.splice(index, 1);
+                        country.controlled = false;
+                        country.police = 0;
+                        country.inAlliance = false;
+                    }
+                    updateStatsDisplay();
+                }
+            });
+        }
+
+        function addMessage(text) {
+            messagesEl.textContent = text;
+        }
+
+        function showAlliancePopup() {
+            allianceOverlay.style.display = 'block';
+            alliancePopup.style.display = 'block';
+            
+            if (alliance.isFormed) {
+                document.querySelector('.flag-option').style.display = 'none';
+                document.querySelector('#alliance-popup > p').style.display = 'none';
+                document.querySelector('#alliance-popup h3').textContent = 'Пригласить в Альянс';
+            } else {
+                 document.querySelector('.flag-option').style.display = 'block';
+                 document.querySelector('#alliance-popup > p').style.display = 'block';
+                 document.querySelector('#alliance-popup h3').textContent = 'Создание Альянса';
+            }
+
+            updateAllianceCountryList();
+        }
+
+        function hideAlliancePopup() {
+            allianceOverlay.style.display = 'none';
+            alliancePopup.style.display = 'none';
+            selectedAllianceFlag = '';
+            document.querySelectorAll('.flag-option button').forEach(btn => btn.style.border = 'none');
+        }
+
+        function updateAllianceCountryList() {
+            allianceCountryList.innerHTML = '';
+            const availableCountries = Object.keys(countries).filter(code => !countries[code].controlled && !countries[code].inAlliance);
+
+            availableCountries.forEach(countryCode => {
+                const country = countries[countryCode];
+                const button = document.createElement('button');
+                button.dataset.country = countryCode;
+                button.textContent = country.flag + ' ' + country.name;
+                allianceCountryList.appendChild(button);
+            });
+        }
+        
+        function proposeAlliance(targetCountryCode) {
+            if (!alliance.isFormed) {
+                if (!selectedAllianceFlag) {
+                    addMessage('Пожалуйста, выберите флаг для альянса.');
+                    return;
+                }
+                alliance.flag = selectedAllianceFlag;
+                alliance.members.push(playerCountryCode);
+                countries[playerCountryCode].inAlliance = true;
+            }
+
+            const targetCountry = countries[targetCountryCode];
+            const acceptanceChance = 0.5;
+
+            if (Math.random() < acceptanceChance) {
+                addMessage(`${targetCountry.name} согласилась вступить в альянс!`);
+                alliance.members.push(targetCountryCode);
+                targetCountry.inAlliance = true;
+                alliance.isFormed = true;
+            } else {
+                addMessage(`${targetCountry.name} отказалась вступать в альянс.`);
+            }
+
+            hideAlliancePopup();
+            updateStatsDisplay();
+        }
+        
+        function checkAllianceStability() {
+            if (!alliance.isFormed || alliance.members.length <= 1) {
+                return;
+            }
+
+            alliance.members.forEach((memberCode, index) => {
+                if (memberCode === playerCountryCode) return;
+
+                const leaveChance = 0.5;
+
+                if (Math.random() < leaveChance) {
+                    const countryName = countries[memberCode].name;
+                    addMessage(`${countryName} покинула ваш альянс!`);
+                    
+                    countries[memberCode].inAlliance = false;
+                    alliance.members.splice(index, 1);
+
+                    if (alliance.members.length <= 1) {
+                        alliance.isFormed = false;
+                        alliance.flag = '';
+                        addMessage('Ваш альянс распался.');
+                    }
+                    updateStatsDisplay();
+                }
+            });
+        }
+    </script>
+</body>
+</html>
