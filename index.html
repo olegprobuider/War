@@ -336,17 +336,17 @@
 
     <script>
         const countries = {
-            'cn': { name: 'Китай', flag: '🇨🇳', income: 200, military: 15, infrastructure: 10, social: 5, controlled: false, controlledBy: '', police: 0, inAlliance: false, resources: ['oil'], population: 1400000000, money: 500, rebellionModifier: 0 },
-            'fr': { name: 'Франция', flag: '🇨🇵', income: 150, military: 10, infrastructure: 8, social: 8, controlled: false, controlledBy: '', police: 0, inAlliance: false, resources: [], population: 65000000, money: 500, rebellionModifier: 0 },
-            'gb': { name: 'Великобритания', flag: '🇬🇧', income: 160, military: 12, infrastructure: 9, social: 7, controlled: false, controlledBy: '', police: 0, inAlliance: false, resources: [], population: 67000000, money: 500, rebellionModifier: 0 },
-            'pl': { name: 'Польша', flag: '🇵🇱', income: 100, military: 8, infrastructure: 6, social: 6, controlled: false, controlledBy: '', police: 0, inAlliance: false, resources: ['wheat'], population: 38000000, money: 500, rebellionModifier: 0 },
-            'us': { name: 'США', flag: '🇺🇲', income: 250, military: 20, infrastructure: 15, social: 10, controlled: false, controlledBy: '', police: 0, inAlliance: false, resources: ['oil'], population: 330000000, money: 500, rebellionModifier: 0 },
-            'ua': { name: 'Украина', flag: '🇺🇦', income: 90, military: 10, infrastructure: 7, social: 5, controlled: false, controlledBy: '', police: 0, inAlliance: false, resources: ['wheat'], population: 41000000, money: 500, rebellionModifier: 0 },
-            'es': { name: 'Испания', flag: '🇪🇦', income: 110, military: 8, infrastructure: 7, social: 7, controlled: false, controlledBy: '', police: 0, inAlliance: false, resources: ['wheat'], population: 47000000, money: 500, rebellionModifier: 0 },
-            'ie': { name: 'Ирландия', flag: '🇮🇪', income: 80, military: 5, infrastructure: 5, social: 6, controlled: false, controlledBy: '', police: 0, inAlliance: false, resources: ['wheat'], population: 5000000, money: 500, rebellionModifier: 0 },
-            'it': { name: 'Италия', flag: '🇮🇹', income: 120, military: 9, infrastructure: 8, social: 9, controlled: false, controlledBy: '', police: 0, inAlliance: false, resources: ['wheat'], population: 60000000, money: 500, rebellionModifier: 0 },
-            'kz': { name: 'Казахстан', flag: '🇰🇿', income: 70, military: 6, infrastructure: 5, social: 4, controlled: false, controlledBy: '', police: 0, inAlliance: false, resources: ['oil'], population: 19000000, money: 500, rebellionModifier: 0 },
-            'ru': { name: 'Россия', flag: '🇷🇺', income: 180, military: 18, infrastructure: 12, social: 6, controlled: false, controlledBy: '', police: 0, inAlliance: false, resources: ['oil'], population: 145000000, money: 500, rebellionModifier: 0 }
+            'cn': { name: 'Китай', flag: '🇨🇳', income: 200, military: 15, infrastructure: 10, social: 5, controlledBy: '', police: 0, inAlliance: false, resources: ['oil'], population: 1400000000, money: 500, rebellionModifier: 0 },
+            'fr': { name: 'Франция', flag: '🇨🇵', income: 150, military: 10, infrastructure: 8, social: 8, controlledBy: '', police: 0, inAlliance: false, resources: [], population: 65000000, money: 500, rebellionModifier: 0 },
+            'gb': { name: 'Великобритания', flag: '🇬🇧', income: 160, military: 12, infrastructure: 9, social: 7, controlledBy: '', police: 0, inAlliance: false, resources: [], population: 67000000, money: 500, rebellionModifier: 0 },
+            'pl': { name: 'Польша', flag: '🇵🇱', income: 100, military: 8, infrastructure: 6, social: 6, controlledBy: '', police: 0, inAlliance: false, resources: ['wheat'], population: 38000000, money: 500, rebellionModifier: 0 },
+            'us': { name: 'США', flag: '🇺🇲', income: 250, military: 20, infrastructure: 15, social: 10, controlledBy: '', police: 0, inAlliance: false, resources: ['oil'], population: 330000000, money: 500, rebellionModifier: 0 },
+            'ua': { name: 'Украина', flag: '🇺🇦', income: 90, military: 10, infrastructure: 7, social: 5, controlledBy: '', police: 0, inAlliance: false, resources: ['wheat'], population: 41000000, money: 500, rebellionModifier: 0 },
+            'es': { name: 'Испания', flag: '🇪🇦', income: 110, military: 8, infrastructure: 7, social: 7, controlledBy: '', police: 0, inAlliance: false, resources: ['wheat'], population: 47000000, money: 500, rebellionModifier: 0 },
+            'ie': { name: 'Ирландия', flag: '🇮🇪', income: 80, military: 5, infrastructure: 5, social: 6, controlledBy: '', police: 0, inAlliance: false, resources: ['wheat'], population: 5000000, money: 500, rebellionModifier: 0 },
+            'it': { name: 'Италия', flag: '🇮🇹', income: 120, military: 9, infrastructure: 8, social: 9, controlledBy: '', police: 0, inAlliance: false, resources: ['wheat'], population: 60000000, money: 500, rebellionModifier: 0 },
+            'kz': { name: 'Казахстан', flag: '🇰🇿', income: 70, military: 6, infrastructure: 5, social: 4, controlledBy: '', police: 0, inAlliance: false, resources: ['oil'], population: 19000000, money: 500, rebellionModifier: 0 },
+            'ru': { name: 'Россия', flag: '🇷🇺', income: 180, military: 18, infrastructure: 12, social: 6, controlledBy: '', police: 0, inAlliance: false, resources: ['oil'], population: 145000000, money: 500, rebellionModifier: 0 }
         };
 
         let playerCountryCode = '';
@@ -444,8 +444,7 @@
         countryListEl.addEventListener('click', (e) => {
             if (e.target.tagName === 'BUTTON') {
                 playerCountryCode = e.target.dataset.country;
-                countries[playerCountryCode].controlled = true;
-                countries[playerCountryCode].controlledBy = playerCountryCode; // Устанавливаем, что игрок контролирует себя
+                countries[playerCountryCode].controlledBy = playerCountryCode;
                 
                 playerStats.income = countries[playerCountryCode].income;
                 playerStats.military = countries[playerCountryCode].military;
@@ -697,10 +696,11 @@
 
         function updateAttackCountryList() {
             attackCountryListEl.innerHTML = '';
-            const availableCountries = Object.keys(countries).filter(code => !countries[code].controlledBy);
+            // Изменено: теперь фильтруются страны, которые находятся в альянсе
+            const availableCountries = Object.keys(countries).filter(code => !countries[code].controlledBy && !countries[code].inAlliance);
             
             if (availableCountries.length === 0) {
-                attackCountryListEl.innerHTML = '<p>Все страны захвачены!</p>';
+                attackCountryListEl.innerHTML = '<p>Все страны захвачены или в альянсе!</p>';
                 return;
             }
 
@@ -717,8 +717,9 @@
             hideAttackPopup();
 
             const targetCountry = countries[targetCountryCode];
-            if (!targetCountry || targetCountry.controlledBy) {
-                addMessage('Неверная цель для атаки!');
+            // Изменено: добавлена проверка на inAlliance
+            if (!targetCountry || targetCountry.controlledBy || targetCountry.inAlliance) {
+                addMessage('Неверная цель для атаки! Эта страна уже захвачена или состоит в альянсе.');
                 return;
             }
 
@@ -801,7 +802,7 @@
 
         function updateAllianceCountryList() {
             allianceCountryList.innerHTML = '';
-            const availableCountries = Object.keys(countries).filter(code => !countries[code].controlledBy);
+            const availableCountries = Object.keys(countries).filter(code => !countries[code].controlledBy && !countries[code].inAlliance);
 
             availableCountries.forEach(countryCode => {
                 const country = countries[countryCode];
@@ -1009,7 +1010,6 @@
             const targetPower = targetCountry.military + Math.random() * 10;
             const winChance = ((playerPower / (playerPower + targetPower)) * 0.7 * 100).toFixed(2);
             
-            // Добавляем проверку статуса
             let countryStatus;
             if (targetCountry.controlledBy) {
                 countryStatus = `Захвачен: ${countries[targetCountry.controlledBy].name} ${countries[targetCountry.controlledBy].flag}`;
@@ -1035,7 +1035,7 @@
             const disasterTypes = ['землетрясение', 'ураган', 'цунами'];
             const randomDisaster = disasterTypes[Math.floor(Math.random() * disasterTypes.length)];
 
-            const availableCountries = Object.keys(countries).filter(code => code !== playerCountryCode && !countries[code].controlled);
+            const availableCountries = Object.keys(countries).filter(code => code !== playerCountryCode && !countries[code].controlledBy);
             if (availableCountries.length === 0) return;
 
             const affectedCountryCode = availableCountries[Math.floor(Math.random() * availableCountries.length)];
