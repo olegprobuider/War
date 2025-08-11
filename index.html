@@ -205,12 +205,12 @@
 
             <div class="map-wrapper">
                 <pre class="map" id="world-map">
-                    🟩🟩🟩🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟩🟩🇺🇲🟩
-                    🟩🇨🇳🟩🟩🟩🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟩🟩🟩
-                    🟩🟩🟩🟩🟩🇮🇪🟩🟩🟩🟩🟩🟩🇺🇦🟩🟦🟦🟦🟦🟦
-                    🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🇵🇱🟦🟦
-                    🟩🇪🇦🟩🟩🟩🟩🟩🇰🇿🟩🟩🇷🇺🟩🟩🟩🟩🟩🟩🟩🟩
-                    🟦🟦🟦🇮🇹🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🇬🇧🟩🟩🟩
+                    🟩🟩🟩🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦
+                    🟩🟩🟩🟩🟩🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦
+                    🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟦🟦🟦🟦🟦
+                    🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟦🟦
+                    🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩
+                    🟦🟦🟦🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩
                     🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦
                     🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦🟦
                 </pre>
@@ -323,20 +323,30 @@
             <button id="disaster-decline-btn">Отказаться</button>
         </div>
     </div>
+    
+    <div class="popup-overlay" id="attack-overlay"></div>
+    <div class="popup" id="attack-popup">
+        <div class="popup-header">
+            <h3>Нападение</h3>
+            <button class="close-btn" id="close-attack-popup">&times;</button>
+        </div>
+        <p>Выберите страну для нападения:</p>
+        <div id="attack-country-list" class="country-option"></div>
+    </div>
 
     <script>
         const countries = {
-            'cn': { name: 'Китай', flag: '🇨🇳', income: 200, military: 15, infrastructure: 10, social: 5, controlled: false, police: 0, inAlliance: false, resources: ['oil'], population: 1400000000, money: 500, rebellionModifier: 0 },
-            'fr': { name: 'Франция', flag: '🇨🇵', income: 150, military: 10, infrastructure: 8, social: 8, controlled: false, police: 0, inAlliance: false, resources: [], population: 65000000, money: 500, rebellionModifier: 0 },
-            'gb': { name: 'Великобритания', flag: '🇬🇧', income: 160, military: 12, infrastructure: 9, social: 7, controlled: false, police: 0, inAlliance: false, resources: [], population: 67000000, money: 500, rebellionModifier: 0 },
-            'pl': { name: 'Польша', flag: '🇵🇱', income: 100, military: 8, infrastructure: 6, social: 6, controlled: false, police: 0, inAlliance: false, resources: ['wheat'], population: 38000000, money: 500, rebellionModifier: 0 },
-            'us': { name: 'США', flag: '🇺🇲', income: 250, military: 20, infrastructure: 15, social: 10, controlled: false, police: 0, inAlliance: false, resources: ['oil'], population: 330000000, money: 500, rebellionModifier: 0 },
-            'ua': { name: 'Украина', flag: '🇺🇦', income: 90, military: 10, infrastructure: 7, social: 5, controlled: false, police: 0, inAlliance: false, resources: ['wheat'], population: 41000000, money: 500, rebellionModifier: 0 },
-            'es': { name: 'Испания', flag: '🇪🇦', income: 110, military: 8, infrastructure: 7, social: 7, controlled: false, police: 0, inAlliance: false, resources: ['wheat'], population: 47000000, money: 500, rebellionModifier: 0 },
-            'ie': { name: 'Ирландия', flag: '🇮🇪', income: 80, military: 5, infrastructure: 5, social: 6, controlled: false, police: 0, inAlliance: false, resources: ['wheat'], population: 5000000, money: 500, rebellionModifier: 0 },
-            'it': { name: 'Италия', flag: '🇮🇹', income: 120, military: 9, infrastructure: 8, social: 9, controlled: false, police: 0, inAlliance: false, resources: ['wheat'], population: 60000000, money: 500, rebellionModifier: 0 },
-            'kz': { name: 'Казахстан', flag: '🇰🇿', income: 70, military: 6, infrastructure: 5, social: 4, controlled: false, police: 0, inAlliance: false, resources: ['oil'], population: 19000000, money: 500, rebellionModifier: 0 },
-            'ru': { name: 'Россия', flag: '🇷🇺', income: 180, military: 18, infrastructure: 12, social: 6, controlled: false, police: 0, inAlliance: false, resources: ['oil'], population: 145000000, money: 500, rebellionModifier: 0 }
+            'cn': { name: 'Китай', flag: '🇨🇳', income: 200, military: 15, infrastructure: 10, social: 5, controlled: false, controlledBy: '', police: 0, inAlliance: false, resources: ['oil'], population: 1400000000, money: 500, rebellionModifier: 0 },
+            'fr': { name: 'Франция', flag: '🇨🇵', income: 150, military: 10, infrastructure: 8, social: 8, controlled: false, controlledBy: '', police: 0, inAlliance: false, resources: [], population: 65000000, money: 500, rebellionModifier: 0 },
+            'gb': { name: 'Великобритания', flag: '🇬🇧', income: 160, military: 12, infrastructure: 9, social: 7, controlled: false, controlledBy: '', police: 0, inAlliance: false, resources: [], population: 67000000, money: 500, rebellionModifier: 0 },
+            'pl': { name: 'Польша', flag: '🇵🇱', income: 100, military: 8, infrastructure: 6, social: 6, controlled: false, controlledBy: '', police: 0, inAlliance: false, resources: ['wheat'], population: 38000000, money: 500, rebellionModifier: 0 },
+            'us': { name: 'США', flag: '🇺🇲', income: 250, military: 20, infrastructure: 15, social: 10, controlled: false, controlledBy: '', police: 0, inAlliance: false, resources: ['oil'], population: 330000000, money: 500, rebellionModifier: 0 },
+            'ua': { name: 'Украина', flag: '🇺🇦', income: 90, military: 10, infrastructure: 7, social: 5, controlled: false, controlledBy: '', police: 0, inAlliance: false, resources: ['wheat'], population: 41000000, money: 500, rebellionModifier: 0 },
+            'es': { name: 'Испания', flag: '🇪🇦', income: 110, military: 8, infrastructure: 7, social: 7, controlled: false, controlledBy: '', police: 0, inAlliance: false, resources: ['wheat'], population: 47000000, money: 500, rebellionModifier: 0 },
+            'ie': { name: 'Ирландия', flag: '🇮🇪', income: 80, military: 5, infrastructure: 5, social: 6, controlled: false, controlledBy: '', police: 0, inAlliance: false, resources: ['wheat'], population: 5000000, money: 500, rebellionModifier: 0 },
+            'it': { name: 'Италия', flag: '🇮🇹', income: 120, military: 9, infrastructure: 8, social: 9, controlled: false, controlledBy: '', police: 0, inAlliance: false, resources: ['wheat'], population: 60000000, money: 500, rebellionModifier: 0 },
+            'kz': { name: 'Казахстан', flag: '🇰🇿', income: 70, military: 6, infrastructure: 5, social: 4, controlled: false, controlledBy: '', police: 0, inAlliance: false, resources: ['oil'], population: 19000000, money: 500, rebellionModifier: 0 },
+            'ru': { name: 'Россия', flag: '🇷🇺', income: 180, military: 18, infrastructure: 12, social: 6, controlled: false, controlledBy: '', police: 0, inAlliance: false, resources: ['oil'], population: 145000000, money: 500, rebellionModifier: 0 }
         };
 
         let playerCountryCode = '';
@@ -381,6 +391,7 @@
         const marketBtn = document.getElementById('market-btn');
         const newsBtn = document.getElementById('news-btn');
         const spyCountryBtn = document.getElementById('spy-country-btn');
+        const attackCountryBtn = document.getElementById('attack-country');
 
         const allianceOverlay = document.getElementById('alliance-overlay');
         const alliancePopup = document.getElementById('alliance-popup');
@@ -422,6 +433,11 @@
         const disasterSupportBtn = document.getElementById('disaster-support-btn');
         const disasterDeclineBtn = document.getElementById('disaster-decline-btn');
 
+        const attackOverlay = document.getElementById('attack-overlay');
+        const attackPopup = document.getElementById('attack-popup');
+        const closeAttackPopupBtn = document.getElementById('close-attack-popup');
+        const attackCountryListEl = document.getElementById('attack-country-list');
+
         let selectedAllianceFlag = '';
         let intervalId;
 
@@ -429,6 +445,7 @@
             if (e.target.tagName === 'BUTTON') {
                 playerCountryCode = e.target.dataset.country;
                 countries[playerCountryCode].controlled = true;
+                countries[playerCountryCode].controlledBy = playerCountryCode; // Устанавливаем, что игрок контролирует себя
                 
                 playerStats.income = countries[playerCountryCode].income;
                 playerStats.military = countries[playerCountryCode].military;
@@ -455,7 +472,7 @@
         document.getElementById('upgrade-infrastructure').addEventListener('click', () => upgrade('infrastructure'));
         document.getElementById('upgrade-military').addEventListener('click', () => upgrade('military'));
         document.getElementById('upgrade-social').addEventListener('click', () => upgrade('social'));
-        document.getElementById('attack-country').addEventListener('click', attack);
+        attackCountryBtn.addEventListener('click', showAttackPopup);
         controlledCountriesListEl.addEventListener('click', (e) => {
             if (e.target.dataset.action === 'upgrade-police') {
                 const countryCode = e.target.closest('.country-card').dataset.country;
@@ -517,6 +534,15 @@
         disasterSupportBtn.addEventListener('click', handleDisasterSupport);
         disasterDeclineBtn.addEventListener('click', handleDisasterDecline);
         
+        closeAttackPopupBtn.addEventListener('click', hideAttackPopup);
+        attackOverlay.addEventListener('click', hideAttackPopup);
+        attackCountryListEl.addEventListener('click', (e) => {
+            if (e.target.tagName === 'BUTTON') {
+                const targetCountryCode = e.target.dataset.country;
+                attack(targetCountryCode);
+            }
+        });
+
         function gameLoop() {
             let totalIncome = playerStats.income;
             controlledCountries.forEach(countryCode => {
@@ -538,21 +564,20 @@
             checkAllianceStability();
             aiTurn();
 
-            // Шанс стихийного бедствия
-            if (Math.random() < 0.025) { // 2.5% шанс на каждый ход
+            if (Math.random() < 0.025) { 
                 triggerDisaster();
             }
         }
 
         function aiTurn() {
-            Object.keys(countries).forEach(code => {
-                if (code === playerCountryCode || countries[code].controlled) {
-                    return;
-                }
+            const aiCountries = Object.keys(countries).filter(code => code !== playerCountryCode && countries[code].controlledBy === code);
+            const independentCountries = Object.keys(countries).filter(code => !countries[code].controlledBy);
 
+            aiCountries.forEach(code => {
                 const country = countries[code];
                 country.money += country.income;
 
+                // Действия ИИ
                 const action = Math.random();
                 if (action < 0.3 && country.money >= 100) {
                     country.money -= 100;
@@ -562,6 +587,20 @@
                     country.money -= 150;
                     country.military++;
                     addNews(`${country.name} увеличила свою военную мощь.`);
+                } else if (action < 0.8 && country.military > 15 && independentCountries.length > 0) {
+                     const targetCode = independentCountries[Math.floor(Math.random() * independentCountries.length)];
+                     const targetCountry = countries[targetCode];
+
+                     const aiPower = country.military + Math.random() * 10;
+                     const targetPower = targetCountry.military + Math.random() * 10;
+                     const winChance = (aiPower / (aiPower + targetPower)) * 0.7;
+
+                     if (Math.random() < winChance) {
+                        countries[targetCode].controlledBy = code;
+                        addNews(`${country.name} захватила ${targetCountry.name}.`);
+                     } else {
+                        addNews(`${country.name} не смогла захватить ${targetCountry.name}.`);
+                     }
                 }
             });
         }
@@ -643,16 +682,45 @@
             }
         }
 
-        function attack() {
-            const availableCountries = Object.keys(countries).filter(code => !countries[code].controlled && !countries[code].inAlliance);
+        function showAttackPopup() {
+            attackOverlay.style.display = 'block';
+            attackPopup.style.display = 'block';
+            clearInterval(intervalId);
+            updateAttackCountryList();
+        }
+
+        function hideAttackPopup() {
+            attackOverlay.style.display = 'none';
+            attackPopup.style.display = 'none';
+            intervalId = setInterval(gameLoop, 5000);
+        }
+
+        function updateAttackCountryList() {
+            attackCountryListEl.innerHTML = '';
+            const availableCountries = Object.keys(countries).filter(code => !countries[code].controlledBy);
             
             if (availableCountries.length === 0) {
-                addMessage('Все страны захвачены или в альянсе!');
+                attackCountryListEl.innerHTML = '<p>Все страны захвачены!</p>';
                 return;
             }
 
-            const targetCode = availableCountries[Math.floor(Math.random() * availableCountries.length)];
-            const targetCountry = countries[targetCode];
+            availableCountries.forEach(countryCode => {
+                const country = countries[countryCode];
+                const button = document.createElement('button');
+                button.dataset.country = countryCode;
+                button.textContent = country.flag + ' ' + country.name;
+                attackCountryListEl.appendChild(button);
+            });
+        }
+
+        function attack(targetCountryCode) {
+            hideAttackPopup();
+
+            const targetCountry = countries[targetCountryCode];
+            if (!targetCountry || targetCountry.controlledBy) {
+                addMessage('Неверная цель для атаки!');
+                return;
+            }
 
             addMessage(`Вы напали на ${targetCountry.name}!`);
             addNews(`Игрок начал военную операцию против ${targetCountry.name}.`);
@@ -665,9 +733,8 @@
             if (Math.random() < winChance) {
                 addMessage(`Победа! Вы захватили ${targetCountry.name}.`);
                 addNews(`Срочно: ${targetCountry.name} былa захваченa игроком.`);
-                countries[targetCode].controlled = true;
-                countries[targetCode].inAlliance = true;
-                controlledCountries.push(targetCode);
+                countries[targetCountryCode].controlledBy = playerCountryCode;
+                controlledCountries.push(targetCountryCode);
             } else {
                 addMessage(`Поражение! Ваши войска были отбиты ${targetCountry.name}.`);
                 addNews(`Неудача: войска игрока потерпели поражение в ${targetCountry.name}.`);
@@ -678,7 +745,6 @@
         function checkRebellion() {
             controlledCountries.forEach((countryCode, index) => {
                 const country = countries[countryCode];
-                // Учитываем модификатор бунта
                 const rebellionChance = Math.max(0.0, 0.8 - country.police * 0.05 + country.rebellionModifier);
 
                 if (Math.random() < rebellionChance) {
@@ -694,10 +760,10 @@
                         addMessage(`Бунт в ${country.name} оказался слишком сильным. Страна свергла ваше правление!`);
                         addNews(`Бунт в ${country.name} оказался успешным! Страна вышла из-под контроля игрока.`);
                         controlledCountries.splice(index, 1);
-                        country.controlled = false;
+                        country.controlledBy = '';
                         country.police = 0;
                         country.inAlliance = false;
-                        country.rebellionModifier = 0; // Сбрасываем модификатор
+                        country.rebellionModifier = 0;
                     }
                     updateStatsDisplay();
                 }
@@ -711,6 +777,7 @@
         function showAlliancePopup() {
             allianceOverlay.style.display = 'block';
             alliancePopup.style.display = 'block';
+            clearInterval(intervalId);
             
             if (alliance.isFormed) {
                 document.querySelector('.flag-option').style.display = 'none';
@@ -729,11 +796,12 @@
             alliancePopup.style.display = 'none';
             selectedAllianceFlag = '';
             document.querySelectorAll('.flag-option button').forEach(btn => btn.style.border = 'none');
+            intervalId = setInterval(gameLoop, 5000);
         }
 
         function updateAllianceCountryList() {
             allianceCountryList.innerHTML = '';
-            const availableCountries = Object.keys(countries).filter(code => !countries[code].controlled && !countries[code].inAlliance);
+            const availableCountries = Object.keys(countries).filter(code => !countries[code].controlledBy);
 
             availableCountries.forEach(countryCode => {
                 const country = countries[countryCode];
@@ -818,6 +886,7 @@
         function showMarketPopup() {
             marketOverlay.style.display = 'block';
             marketPopup.style.display = 'block';
+            clearInterval(intervalId);
             playerOilEl.textContent = playerStats.oil;
             playerWheatEl.textContent = playerStats.wheat;
             marketMainView.style.display = 'block';
@@ -827,6 +896,7 @@
         function hideMarketPopup() {
             marketOverlay.style.display = 'none';
             marketPopup.style.display = 'none';
+            intervalId = setInterval(gameLoop, 5000);
         }
 
         function showSellResourceView(resourceType, resourceName) {
@@ -874,12 +944,14 @@
         function showNewsPopup() {
             newsOverlay.style.display = 'block';
             newsPopup.style.display = 'block';
+            clearInterval(intervalId);
             renderNews();
         }
 
         function hideNewsPopup() {
             newsOverlay.style.display = 'none';
             newsPopup.style.display = 'none';
+            intervalId = setInterval(gameLoop, 5000);
         }
 
         function addNews(text) {
@@ -897,6 +969,7 @@
         function showSpyPopup() {
             spyOverlay.style.display = 'block';
             spyPopup.style.display = 'block';
+            clearInterval(intervalId);
             spyInfoEl.style.display = 'none';
             updateSpyCountryList();
         }
@@ -905,6 +978,7 @@
             spyOverlay.style.display = 'none';
             spyPopup.style.display = 'none';
             spyInfoEl.style.display = 'none';
+            intervalId = setInterval(gameLoop, 5000);
         }
 
         function updateSpyCountryList() {
@@ -934,10 +1008,19 @@
             const playerPower = playerStats.military + Math.random() * 10;
             const targetPower = targetCountry.military + Math.random() * 10;
             const winChance = ((playerPower / (playerPower + targetPower)) * 0.7 * 100).toFixed(2);
+            
+            // Добавляем проверку статуса
+            let countryStatus;
+            if (targetCountry.controlledBy) {
+                countryStatus = `Захвачен: ${countries[targetCountry.controlledBy].name} ${countries[targetCountry.controlledBy].flag}`;
+            } else {
+                countryStatus = 'Свободный';
+            }
 
             spyInfoEl.style.display = 'block';
             spyInfoEl.innerHTML = `
                 <h4>Отчет по ${targetCountry.flag} ${targetCountry.name}</h4>
+                <p><strong>Статус:</strong> ${countryStatus}</p>
                 <p><strong>Планы:</strong> У страны нет явных планов, но она активно развивается.</p>
                 <p><strong>Население:</strong> ${targetCountry.population.toLocaleString()} человек</p>
                 <p><strong>Доход:</strong> ${targetCountry.income} 💰</p>
@@ -974,7 +1057,7 @@
 
             playerStats.money -= DISASTER_AID_COST;
             const country = countries[activeDisasterCountryCode];
-            country.rebellionModifier -= 0.3; // Уменьшаем шанс бунта на 30%
+            country.rebellionModifier -= 0.3; 
             addNews(`Игрок оказал помощь ${country.name} (${DISASTER_AID_COST}💰).`);
             addMessage(`Вы оказали помощь ${country.name}. Шанс бунта там значительно снижен.`);
             updateStatsDisplay();
@@ -983,8 +1066,8 @@
 
         function handleDisasterDecline() {
             const country = countries[activeDisasterCountryCode];
-            country.rebellionModifier += 0.1; // Увеличиваем шанс бунта на 10%
-            country.police = Math.max(0, country.police - 1); // Уменьшаем полицию на 1
+            country.rebellionModifier += 0.1;
+            country.police = Math.max(0, country.police - 1);
             addNews(`Игрок отказался помочь ${country.name}.`);
             addMessage(`Вы отказались помогать ${country.name}. Это вызвало недовольство.`);
             updateStatsDisplay();
